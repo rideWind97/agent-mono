@@ -17,6 +17,7 @@
     "@agent-mono/shared": "workspace:*",
     "@google/genai": "^1.0.0",
     "cors": "^2.8.5",
+    "deepagents": "^1.8.6",
     "dotenv": "^16.4.0",
     "express": "^5.1.0",
     "openai": "^4.85.0"

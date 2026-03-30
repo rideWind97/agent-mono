@@ -12,8 +12,12 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
-  "sideEffects": ["**/*.css"],
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
     "dev": "tsc --project tsconfig.build.json --watch",
@@ -23,6 +27,10 @@
     "clean": "rm -rf dist .turbo *.tsbuildinfo"
   },
   "dependencies": {
+    "@langchain/core": "^1.1.36",
+    "@langchain/tavily": "^1.2.0",
+    "deepagents": "^1.8.6",
+    "langchain": "^1.2.37",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

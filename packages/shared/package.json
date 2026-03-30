@@ -11,7 +11,9 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
     "dev": "tsc --project tsconfig.build.json --watch",
@@ -24,5 +26,11 @@
     "@agent-mono/eslint-config": "workspace:*",
     "@agent-mono/typescript-config": "workspace:*",
     "typescript": "^5.5.0"
+  },
+  "dependencies": {
+    "@langchain/core": "^1.1.36",
+    "@langchain/tavily": "^1.2.0",
+    "deepagents": "^1.8.6",
+    "langchain": "^1.2.37"
   }
 }
