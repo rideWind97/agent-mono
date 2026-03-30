@@ -3,6 +3,7 @@ import { Layout } from "@/components/Layout";
 import { HomePage } from "@/pages/Home";
 import { AboutPage } from "@/pages/About";
 import { ChatPage } from "@/pages/chat";
+import { PromptPlaygroundPage } from "@/pages/prompt-playground";
 import { NotFoundPage } from "@/pages/NotFound";
 
 export function App() {
@@ -11,6 +12,7 @@ export function App() {
       <Route element={<Layout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/chat" element={<ChatPage />} />
+        <Route path="/prompt-playground" element={<PromptPlaygroundPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
