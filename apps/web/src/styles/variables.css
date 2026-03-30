@@ -1,0 +1,19 @@
+/* ===== CSS Variables ===== */
+:root {
+  --color-bg: #0a0a0b;
+  --color-bg-secondary: #141416;
+  --color-bg-card: #1a1a1e;
+  --color-border: #2a2a30;
+  --color-text: #e4e4e7;
+  --color-text-secondary: #a1a1aa;
+  --color-primary: #6366f1;
+  --color-primary-hover: #818cf8;
+  --color-accent: #22d3ee;
+  --color-gradient-start: #6366f1;
+  --color-gradient-end: #22d3ee;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --max-width: 1100px;
+  --header-height: 64px;
+  --transition: 0.2s ease;
+}
