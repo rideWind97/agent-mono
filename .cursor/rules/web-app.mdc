@@ -1,0 +1,109 @@
+---
+description: apps/web 是整个 monorepo 的统一前端展示层，所有子 app 的前端页面都在这里实现
+globs:
+  - apps/web/**
+alwaysApply: false
+---
+
+# apps/web — 统一前端展示层
+
+## 定位
+
+`apps/web` 是整个 `agent-mono` monorepo 的 **统一 Web 前端**。
+它不是某个单一功能的前端，而是所有子应用（如 `web-summarizer`、未来的其他 agent 应用等）的 **前端入口和展示层**。
+
+> 核心原则：其它子 app 如果需要前端页面，**不要在子 app 里单独写前端**，而是在 `apps/web` 中新增页面/路由来承载。
+
+## 技术栈
+
+| 技术 | 版本 | 说明 |
+|------|------|------|
+| Vite | 8.x | 构建工具 |
+| React | 19.x | UI 框架 |
+| TypeScript | 5.x | 类型系统 |
+| React Router | 7.x | 客户端路由 |
+
+## 项目结构约定
+
+```
+apps/web/src/
+├── components/          # 全局共享组件（Layout、通用 UI 等）
+│   └── Layout.tsx       # 全局布局（顶栏导航 + 内容区 + 底栏）
+├── pages/               # 页面组件，按功能/子app分组
+│   ├── Home.tsx         # 首页
+│   ├── About.tsx        # 关于页
+│   ├── NotFound.tsx     # 404 页
+│   └── <sub-app>/      # 子 app 的前端页面放在独立目录下
+│       ├── index.tsx    # 子 app 入口页
+│       └── ...          # 子 app 的其他页面
+├── styles/
+│   └── global.css       # 全局样式（CSS 变量、Reset、通用类）
+├── App.tsx              # 路由配置中心
+├── main.tsx             # 应用入口
+└── vite-env.d.ts        # Vite 类型声明
+```
+
+## 路由规范
+
+所有路由在 `App.tsx` 中统一注册，使用 React Router 的嵌套路由：
+
+```tsx
+// App.tsx 路由注册示例
+<Routes>
+  <Route element={<Layout />}>
+    {/* 基础页面 */}
+    <Route path="/" element={<HomePage />} />
+    <Route path="/about" element={<AboutPage />} />
+
+    {/* 子 app 页面 — 每个子 app 用独立的路由前缀 */}
+    <Route path="/summarizer" element={<SummarizerPage />} />
+    <Route path="/another-app/*" element={<AnotherAppRoutes />} />
+
+    {/* 404 兜底 */}
+    <Route path="*" element={<NotFoundPage />} />
+  </Route>
+</Routes>
+```
+
+### 路由命名规则
+
+- 每个子 app 使用 **独立的路由前缀**，如 `/summarizer`、`/chat` 等
+- 如果子 app 有多个页面，使用 `/*` 通配并在子目录中定义子路由
+- 导航链接同步更新到 `Layout.tsx` 的顶栏导航中
+
+## 新增子 app 前端页面的步骤
+
+1. **在 `src/pages/` 下新建子目录**，如 `src/pages/summarizer/`
+2. **编写页面组件**，如 `src/pages/summarizer/index.tsx`
+3. **在 `App.tsx` 中注册路由**，如 `<Route path="/summarizer" element={<SummarizerPage />} />`
+4. **在 `Layout.tsx` 导航中添加链接**（如果需要在顶栏显示）
+5. **如果需要调用子 app 的后端 API**，在 `vite.config.ts` 中配置 proxy 代理
+
+## 样式约定
+
+- 全局样式变量定义在 `src/styles/global.css` 的 `:root` 中
+- 使用 CSS 变量保持主题一致性（暗色主题）
+- 页面级样式可以在 `global.css` 中按 `/* ===== PageName Page ===== */` 分区书写
+- 组件级样式优先使用 CSS Modules 或在 global.css 中按命名空间隔离
+
+## 与子 app 后端的交互
+
+子 app（如 `web-summarizer`）可能有自己的后端 API 服务。前端通过 Vite 的 dev proxy 或生产环境的 nginx 反向代理来对接：
+
+```ts
+// vite.config.ts 中配置 API 代理示例
+server: {
+  proxy: {
+    '/api/summarizer': {
+      target: 'http://localhost:3001',
+      changeOrigin: true,
+    },
+  },
+}
+```
+
+## 依赖管理
+
+- 共享工具函数从 `@agent-mono/shared` 引入
+- 共享 UI 组件从 `@agent-mono/ui` 引入
+- 路径别名 `@/` 映射到 `src/` 目录
