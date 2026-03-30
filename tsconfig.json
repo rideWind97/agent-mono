@@ -7,8 +7,7 @@
     { "path": "./packages/shared" },
     { "path": "./packages/ui" },
     { "path": "./apps/web" },
-    { "path": "./apps/api" },
-    { "path": "./apps/web-summarizer" }
+    { "path": "./apps/server" }
   ],
   "files": []
 }

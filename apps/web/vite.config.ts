@@ -17,5 +17,12 @@ export default defineConfig({
   server: {
     port: 5173,
     open: true,
+    // 代理 /api 请求到 server 子应用
+    proxy: {
+      "/api": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+      },
+    },
   },
 });

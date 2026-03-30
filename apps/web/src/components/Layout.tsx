@@ -19,6 +19,14 @@ export function Layout() {
               首页
             </NavLink>
             <NavLink
+              to="/chat"
+              className={({ isActive }) =>
+                `nav-link ${isActive ? "active" : ""}`
+              }
+            >
+              AI 对话
+            </NavLink>
+            <NavLink
               to="/about"
               className={({ isActive }) =>
                 `nav-link ${isActive ? "active" : ""}`

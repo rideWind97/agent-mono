@@ -86,21 +86,24 @@ apps/web/src/
 - 页面级样式可以在 `global.css` 中按 `/* ===== PageName Page ===== */` 分区书写
 - 组件级样式优先使用 CSS Modules 或在 global.css 中按命名空间隔离
 
-## 与子 app 后端的交互
+## 与后端 Server 的交互
 
-子 app（如 `web-summarizer`）可能有自己的后端 API 服务。前端通过 Vite 的 dev proxy 或生产环境的 nginx 反向代理来对接：
+所有 AI 相关的后端请求统一由 `apps/server`（`@agent-mono/server`）提供。前端通过 Vite 的 dev proxy 代理到 server：
 
 ```ts
-// vite.config.ts 中配置 API 代理示例
+// vite.config.ts 中已配置 API 代理
 server: {
   proxy: {
-    '/api/summarizer': {
+    '/api': {
       target: 'http://localhost:3001',
       changeOrigin: true,
     },
   },
 }
 ```
+
+> 开发时需同时启动 `apps/server`（端口 3001）和 `apps/web`（端口 5173）。
+> 可通过根目录 `pnpm dev` 由 Turborepo 同时启动。
 
 ## 依赖管理
 
