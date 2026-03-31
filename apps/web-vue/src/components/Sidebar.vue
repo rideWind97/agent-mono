@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
+
 defineProps<{
   collapsed: boolean;
 }>();
@@ -7,11 +10,21 @@ const emit = defineEmits<{
   (e: "toggle"): void;
 }>();
 
+const route = useRoute();
+const router = useRouter();
+
 const navItems = [
-  { icon: "💬", label: "对话", active: true },
-  { icon: "🔧", label: "工具", active: false },
-  { icon: "📝", label: "历史", active: false },
+  { icon: "💬", label: "AI 对话", to: "/" },
+  { icon: "🤖", label: "Agent", to: "/agent" },
 ];
+
+function navigate(path: string) {
+  router.push(path);
+}
+
+function isActive(path: string) {
+  return route.path === path;
+}
 </script>
 
 <template>
@@ -21,7 +34,7 @@ const navItems = [
       <div class="logo">
         <span class="logo-icon">🤖</span>
         <Transition name="fade">
-          <span v-if="!collapsed" class="logo-text">LangChain Agent</span>
+          <span v-if="!collapsed" class="logo-text">LangChain Demo</span>
         </Transition>
       </div>
       <button class="toggle-btn" :title="collapsed ? '展开侧边栏' : '收起侧边栏'" @click="emit('toggle')">
@@ -29,24 +42,15 @@ const navItems = [
       </button>
     </div>
 
-    <!-- New Chat -->
-    <div class="sidebar-action">
-      <button class="new-chat-btn">
-        <span class="btn-icon">＋</span>
-        <Transition name="fade">
-          <span v-if="!collapsed" class="btn-label">新建对话</span>
-        </Transition>
-      </button>
-    </div>
-
     <!-- Navigation -->
     <nav class="sidebar-nav">
       <button
         v-for="item in navItems"
-        :key="item.label"
+        :key="item.to"
         class="nav-item"
-        :class="{ active: item.active }"
+        :class="{ active: isActive(item.to) }"
         :title="collapsed ? item.label : ''"
+        @click="navigate(item.to)"
       >
         <span class="nav-icon">{{ item.icon }}</span>
         <Transition name="fade">

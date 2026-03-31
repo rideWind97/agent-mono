@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
+import { useRoute } from "vue-router";
 
-import ChatView from "./components/ChatView.vue";
 import Sidebar from "./components/Sidebar.vue";
+
+const route = useRoute();
 
 const sidebarCollapsed = ref(false);
 const isMobile = ref(false);
@@ -37,7 +39,7 @@ onUnmounted(() => {
 
     <Sidebar :collapsed="sidebarCollapsed" @toggle="sidebarCollapsed = !sidebarCollapsed" />
     <main class="app-main">
-      <ChatView />
+      <router-view />
     </main>
   </div>
 </template>

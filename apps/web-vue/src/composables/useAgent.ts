@@ -25,7 +25,7 @@ export interface AgentConfig {
 
 const DEFAULT_CONFIG: AgentConfig = {
   apiKey: "",
-  baseUrl: "https://api.openai.com/v1",
+  baseUrl: "https://api.openai.com",
   model: "gpt-4o-mini",
   temperature: 0.7,
   maxTokens: 2048,
@@ -81,10 +81,12 @@ export function useAgent() {
     currentToolCalls.value = [];
 
     try {
+      // 1. 先 slice 去掉最后一条空的 assistant 占位消息
+      // 2. 再 filter 去掉历史中没有内容的 assistant 消息
+      const chatHistory = messages.value.slice(0, -1);
       const body = {
-        messages: messages.value
+        messages: chatHistory
           .filter((m) => m.role !== "assistant" || m.content)
-          .slice(0, -1) // exclude the empty assistant placeholder
           .map((m) => ({ role: m.role, content: m.content })),
         model: agentConfig.value.model,
         apiKey: agentConfig.value.apiKey,
