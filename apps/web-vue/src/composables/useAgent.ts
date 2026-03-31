@@ -1,0 +1,196 @@
+import { ref, nextTick } from "vue";
+
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+  toolCalls?: ToolCallEvent[];
+  timestamp: number;
+}
+
+export interface ToolCallEvent {
+  type: "tool_start" | "tool_end";
+  tool: string;
+  input?: unknown;
+  output?: string;
+}
+
+export interface AgentConfig {
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+  temperature: number;
+  maxTokens: number;
+}
+
+const DEFAULT_CONFIG: AgentConfig = {
+  apiKey: "",
+  baseUrl: "https://api.openai.com/v1",
+  model: "gpt-4o-mini",
+  temperature: 0.7,
+  maxTokens: 2048,
+};
+
+export function useAgent() {
+  const messages = ref<ChatMessage[]>([]);
+  const isLoading = ref(false);
+  const agentConfig = ref<AgentConfig>({ ...DEFAULT_CONFIG });
+  const currentToolCalls = ref<ToolCallEvent[]>([]);
+
+  // Load config from localStorage
+  const savedConfig = localStorage.getItem("agent-config");
+  if (savedConfig) {
+    try {
+      Object.assign(agentConfig.value, JSON.parse(savedConfig));
+    } catch {
+      // ignore
+    }
+  }
+
+  function saveConfig() {
+    localStorage.setItem("agent-config", JSON.stringify(agentConfig.value));
+  }
+
+  function generateId(): string {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
+  async function sendMessage(content: string) {
+    if (!content.trim() || isLoading.value) return;
+
+    // Add user message
+    const userMsg: ChatMessage = {
+      id: generateId(),
+      role: "user",
+      content: content.trim(),
+      timestamp: Date.now(),
+    };
+    messages.value.push(userMsg);
+
+    // Prepare assistant message placeholder
+    const assistantMsg: ChatMessage = {
+      id: generateId(),
+      role: "assistant",
+      content: "",
+      toolCalls: [],
+      timestamp: Date.now(),
+    };
+    messages.value.push(assistantMsg);
+
+    isLoading.value = true;
+    currentToolCalls.value = [];
+
+    try {
+      const body = {
+        messages: messages.value
+          .filter((m) => m.role !== "assistant" || m.content)
+          .slice(0, -1) // exclude the empty assistant placeholder
+          .map((m) => ({ role: m.role, content: m.content })),
+        model: agentConfig.value.model,
+        apiKey: agentConfig.value.apiKey,
+        baseUrl: agentConfig.value.baseUrl,
+        temperature: agentConfig.value.temperature,
+        maxTokens: agentConfig.value.maxTokens,
+      };
+
+      const response = await fetch("/api/agent/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || `HTTP ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let streamDone = false;
+
+      while (!streamDone) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith("data: ")) continue;
+
+          const data = trimmed.slice(6);
+          if (data === "[DONE]") {
+            streamDone = true;
+            break;
+          }
+
+          try {
+            const parsed = JSON.parse(data);
+
+            if (parsed.type === "token") {
+              assistantMsg.content += parsed.content || "";
+              // Trigger reactivity
+              messages.value = [...messages.value];
+              await nextTick();
+            }
+
+            if (parsed.type === "tool_start") {
+              const toolEvent: ToolCallEvent = {
+                type: "tool_start",
+                tool: parsed.tool,
+                input: parsed.input,
+              };
+              currentToolCalls.value.push(toolEvent);
+              assistantMsg.toolCalls = [...currentToolCalls.value];
+              messages.value = [...messages.value];
+            }
+
+            if (parsed.type === "tool_end") {
+              const toolEvent: ToolCallEvent = {
+                type: "tool_end",
+                tool: parsed.tool,
+                output: parsed.output,
+              };
+              currentToolCalls.value.push(toolEvent);
+              assistantMsg.toolCalls = [...currentToolCalls.value];
+              messages.value = [...messages.value];
+            }
+
+            if (parsed.type === "error") {
+              assistantMsg.content += `\n\n⚠️ ${parsed.message}`;
+              messages.value = [...messages.value];
+            }
+          } catch {
+            // ignore parse errors
+          }
+        }
+      }
+    } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      assistantMsg.content = `❌ 请求失败: ${errMsg}`;
+      messages.value = [...messages.value];
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  function clearMessages() {
+    messages.value = [];
+    currentToolCalls.value = [];
+  }
+
+  return {
+    messages,
+    isLoading,
+    agentConfig,
+    currentToolCalls,
+    sendMessage,
+    clearMessages,
+    saveConfig,
+  };
+}

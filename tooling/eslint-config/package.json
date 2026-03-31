@@ -6,7 +6,8 @@
   "exports": {
     "./base": "./base.js",
     "./react": "./react.js",
-    "./node": "./node.js"
+    "./node": "./node.js",
+    "./vue": "./vue.js"
   },
   "dependencies": {
     "@langchain/core": "^1.1.36",
@@ -18,9 +19,11 @@
     "eslint-plugin-import-x": "^4.0.0",
     "eslint-plugin-react": "^7.35.0",
     "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-vue": "^9.27.0",
     "globals": "^16.0.0",
     "langchain": "^1.2.37",
-    "typescript-eslint": "^8.0.0"
+    "typescript-eslint": "^8.0.0",
+    "vue-eslint-parser": "^9.4.3"
   },
   "peerDependencies": {
     "eslint": "^9.0.0",
