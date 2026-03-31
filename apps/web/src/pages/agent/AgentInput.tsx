@@ -1,11 +1,11 @@
 import type { RefObject } from "react";
 
-import type { Provider } from "./types";
+import type { AgentProvider } from "./types";
 
-interface ChatInputProps {
+interface AgentInputProps {
   input: string;
   isLoading: boolean;
-  provider: Provider;
+  provider: AgentProvider;
   inputRef: RefObject<HTMLTextAreaElement | null>;
   onInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
@@ -13,7 +13,7 @@ interface ChatInputProps {
   onStop: () => void;
 }
 
-export function ChatInput({
+export function AgentInput({
   input,
   isLoading,
   provider,
@@ -22,7 +22,7 @@ export function ChatInput({
   onKeyDown,
   onSend,
   onStop,
-}: ChatInputProps) {
+}: AgentInputProps) {
   return (
     <div className="chat-input-area">
       <div className="chat-input-wrapper">
@@ -51,8 +51,8 @@ export function ChatInput({
         )}
       </div>
       <p className="chat-input-hint">
-        通过 @agent-mono/server 中转 ·{" "}
-        {provider === "gemini" ? "Gemini API" : "OpenAI 兼容 API"} · 流式输出
+        {provider === "gemini" ? "Gemini Function Calling" : "LangChain ReAct Agent"}{" "}
+        · 支持工具调用 · 流式输出
       </p>
     </div>
   );

@@ -1,32 +1,35 @@
 import type { RefObject } from "react";
-
-import type { Message } from "./types";
-import { CHAT_SUGGESTIONS } from "./types";
-
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+import type { Message } from "./types";
+import { AGENT_SUGGESTIONS } from "./types";
 
-interface ChatMessageListProps {
+interface AgentMessageListProps {
   messages: Message[];
   messagesEndRef: RefObject<HTMLDivElement | null>;
   inputRef: RefObject<HTMLTextAreaElement | null>;
   onSuggestionClick: (suggestion: string) => void;
 }
 
-export function ChatMessageList({
+export function AgentMessageList({
   messages,
   messagesEndRef,
   inputRef,
   onSuggestionClick,
-}: ChatMessageListProps) {
+}: AgentMessageListProps) {
   return (
     <div className="chat-messages">
       {messages.length === 0 && (
         <div className="chat-empty">
           <div className="chat-empty-icon">🤖</div>
-          <h2>开始对话</h2>
-          <p>输入你的问题，与 AI 进行对话</p>
+          <h2>AI 代理</h2>
+          <p>拥有工具能力的智能代理，可以查询天气、计算数学、获取时间</p>
+          <div className="agent-tools-info">
+            <span className="agent-tool-badge">🌤️ 天气查询</span>
+            <span className="agent-tool-badge">🧮 计算器</span>
+            <span className="agent-tool-badge">🕐 当前时间</span>
+          </div>
           <div className="chat-suggestions">
-            {CHAT_SUGGESTIONS.map((suggestion) => (
+            {AGENT_SUGGESTIONS.map((suggestion) => (
               <button
                 key={suggestion}
                 className="suggestion-btn"
@@ -49,7 +52,7 @@ export function ChatMessageList({
           </div>
           <div className="message-content">
             <div className="message-role">
-              {msg.role === "user" ? "你" : "AI"}
+              {msg.role === "user" ? "你" : "Agent"}
             </div>
             <div className="message-text">
               {msg.content ? (

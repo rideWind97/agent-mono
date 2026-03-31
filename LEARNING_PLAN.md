@@ -71,10 +71,10 @@
 - 🔧 [LangSmith Prompt Hub](https://smith.langchain.com/hub)（优质 Prompt 模板库）
 
 **实践任务：**
-- [ ] 设计一个"代码审查助手"的 System Prompt
-- [ ] 用 Few-shot 让模型输出固定 JSON 格式
-- [ ] 实现 CoT 提示，让模型分步解决数学题
-- [ ] 对比不同 Prompt 策略的输出质量
+- [x] 设计一个"代码审查助手"的 System Prompt
+- [x] 用 Few-shot 让模型输出固定 JSON 格式
+- [x] 实现 CoT 提示，让模型分步解决数学题
+- [x] 对比不同 Prompt 策略的输出质量
 
 ---
 

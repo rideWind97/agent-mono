@@ -3,6 +3,8 @@ import cors from "cors";
 
 import { chatRouter } from "./routes/chat.js";
 import { geminiRouter } from "./routes/gemini.js";
+import { agentRouter } from "./routes/agent.js";
+import { agentGeminiRouter } from "./routes/agent-gemini.js";
 
 const app: Express = express();
 const PORT = Number(process.env.PORT) || 3001;
@@ -19,6 +21,8 @@ app.get("/health", (_req, res) => {
 // API 路由
 app.use("/api/chat", chatRouter);
 app.use("/api/gemini", geminiRouter);
+app.use("/api/agent/gemini", agentGeminiRouter);
+app.use("/api/agent", agentRouter);
 
 // 启动服务
 app.listen(PORT, () => {

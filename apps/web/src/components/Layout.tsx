@@ -27,6 +27,14 @@ export function Layout() {
               AI 对话
             </NavLink>
             <NavLink
+              to="/agent"
+              className={({ isActive }) =>
+                `nav-link ${isActive ? "active" : ""}`
+              }
+            >
+              AI 代理
+            </NavLink>
+            <NavLink
               to="/prompt-playground"
               className={({ isActive }) =>
                 `nav-link ${isActive ? "active" : ""}`

@@ -41,5 +41,9 @@
     "*.{json,md,css,yaml,yml}": [
       "prettier --write"
     ]
+  },
+  "dependencies": {
+    "@langchain/core": "^1.1.36",
+    "@langchain/openai": "^1.4.1"
   }
 }

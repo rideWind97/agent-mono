@@ -16,11 +16,16 @@
   "dependencies": {
     "@agent-mono/shared": "workspace:*",
     "@google/genai": "^1.0.0",
+    "@langchain/core": "^1.1.38",
+    "@langchain/langgraph": "^1.2.6",
+    "@langchain/openai": "^1.4.1",
     "cors": "^2.8.5",
     "deepagents": "^1.8.6",
     "dotenv": "^16.4.0",
     "express": "^5.1.0",
-    "openai": "^4.85.0"
+    "langchain": "^1.2.37",
+    "openai": "^4.85.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@agent-mono/eslint-config": "workspace:*",
