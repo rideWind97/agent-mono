@@ -55,6 +55,23 @@ export function useAgent() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   }
 
+  function applyClientToolEffect(tool: string, output?: string) {
+    if (tool !== "set_page_background_color" || !output) return;
+
+    try {
+      const parsed = JSON.parse(output) as { action?: string; color?: string; success?: boolean };
+      if (parsed.action !== "set_page_background_color" || !parsed.success || !parsed.color) return;
+
+      // Apply background color to chat message container.
+      const chatMessages = document.querySelector<HTMLElement>(".chat-messages");
+      if (chatMessages) {
+        chatMessages.style.background = parsed.color;
+      }
+    } catch {
+      // ignore malformed tool output
+    }
+  }
+
   async function sendMessage(content: string) {
     if (!content.trim() || isLoading.value) return;
 
@@ -172,6 +189,7 @@ export function useAgent() {
                 tool: parsed.tool,
                 output: parsed.output,
               };
+              applyClientToolEffect(parsed.tool, parsed.output);
               currentToolCalls.value.push(toolEvent);
               updateLast((msg) => ({
                 ...msg,

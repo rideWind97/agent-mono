@@ -20,6 +20,7 @@ const quickPrompts = [
   { icon: "🌐", text: "把「你好世界」翻译成英文和日文", desc: "多语言翻译" },
   { icon: "🌍", text: "对比一下北京和上海的天气", desc: "多工具协作" },
   { icon: "🔢", text: "计算圆周率的前10位，再告诉我现在的时间", desc: "多步推理" },
+  { icon: "🎨", text: "把背景色设置为红色", desc: "设置背景色" },
 ];
 
 async function handleSend() {
