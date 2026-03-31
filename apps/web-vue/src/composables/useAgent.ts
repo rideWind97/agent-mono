@@ -1,4 +1,4 @@
-import { ref, nextTick } from "vue";
+import { ref } from "vue";
 
 export interface ChatMessage {
   id: string;
@@ -68,21 +68,33 @@ export function useAgent() {
     messages.value.push(userMsg);
 
     // Prepare assistant message placeholder
-    const assistantMsg: ChatMessage = {
-      id: generateId(),
-      role: "assistant",
-      content: "",
-      toolCalls: [],
-      timestamp: Date.now(),
-    };
-    messages.value.push(assistantMsg);
+    messages.value = [
+      ...messages.value,
+      {
+        id: generateId(),
+        role: "assistant",
+        content: "",
+        toolCalls: [],
+        timestamp: Date.now(),
+      },
+    ];
 
     isLoading.value = true;
     currentToolCalls.value = [];
 
+    // Helper: get the last (assistant) message by index to avoid stale references
+    const lastIdx = () => messages.value.length - 1;
+    const updateLast = (updater: (msg: ChatMessage) => ChatMessage) => {
+      const idx = lastIdx();
+      const updated = updater({ ...messages.value[idx] });
+      messages.value = [
+        ...messages.value.slice(0, idx),
+        updated,
+      ];
+    };
+
     try {
-      // 1. 先 slice 去掉最后一条空的 assistant 占位消息
-      // 2. 再 filter 去掉历史中没有内容的 assistant 消息
+      // Build chat history (exclude the empty assistant placeholder)
       const chatHistory = messages.value.slice(0, -1);
       const body = {
         messages: chatHistory
@@ -135,10 +147,10 @@ export function useAgent() {
             const parsed = JSON.parse(data);
 
             if (parsed.type === "token") {
-              assistantMsg.content += parsed.content || "";
-              // Trigger reactivity
-              messages.value = [...messages.value];
-              await nextTick();
+              updateLast((msg) => ({
+                ...msg,
+                content: msg.content + (parsed.content || ""),
+              }));
             }
 
             if (parsed.type === "tool_start") {
@@ -148,8 +160,10 @@ export function useAgent() {
                 input: parsed.input,
               };
               currentToolCalls.value.push(toolEvent);
-              assistantMsg.toolCalls = [...currentToolCalls.value];
-              messages.value = [...messages.value];
+              updateLast((msg) => ({
+                ...msg,
+                toolCalls: [...currentToolCalls.value],
+              }));
             }
 
             if (parsed.type === "tool_end") {
@@ -159,13 +173,17 @@ export function useAgent() {
                 output: parsed.output,
               };
               currentToolCalls.value.push(toolEvent);
-              assistantMsg.toolCalls = [...currentToolCalls.value];
-              messages.value = [...messages.value];
+              updateLast((msg) => ({
+                ...msg,
+                toolCalls: [...currentToolCalls.value],
+              }));
             }
 
             if (parsed.type === "error") {
-              assistantMsg.content += `\n\n⚠️ ${parsed.message}`;
-              messages.value = [...messages.value];
+              updateLast((msg) => ({
+                ...msg,
+                content: msg.content + `\n\n⚠️ ${parsed.message}`,
+              }));
             }
           } catch {
             // ignore parse errors
@@ -174,8 +192,10 @@ export function useAgent() {
       }
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : String(error);
-      assistantMsg.content = `❌ 请求失败: ${errMsg}`;
-      messages.value = [...messages.value];
+      updateLast((msg) => ({
+        ...msg,
+        content: `❌ 请求失败: ${errMsg}`,
+      }));
     } finally {
       isLoading.value = false;
     }
