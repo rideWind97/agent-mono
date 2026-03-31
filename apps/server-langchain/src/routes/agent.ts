@@ -24,6 +24,7 @@ interface AgentBody {
   baseUrl?: string;
   temperature?: number;
   maxTokens?: number;
+  provider?: "openai" | "gemini";
 }
 
 /**
@@ -35,7 +36,7 @@ function normalizeBaseUrl(url: string): string {
   const trimmed = url.replace(/\/+$/, "");
   if (/\/v\d+$/.test(trimmed)) return trimmed;
   if (/\/v\d+\//.test(trimmed)) return trimmed;
-  return `${trimmed}/v1`;
+  return trimmed;
 }
 
 /* ------------------------------------------------------------------ */
@@ -73,13 +74,22 @@ export async function agentRoutes(app: FastifyInstance) {
       baseUrl,
       temperature = 0.7,
       maxTokens = 2048,
+      provider,
     } = request.body;
 
-    const resolvedApiKey = apiKey || config.openaiApiKey;
-    const rawBaseUrl = baseUrl || config.openaiBaseUrl;
+    const isGemini = provider === "gemini" || model.startsWith("gemini-");
+    const geminiCompatibleBaseUrl = "https://generativelanguage.googleapis.com/v1beta/openai";
+
+    const resolvedApiKey = isGemini
+      ? (apiKey || config.googleApiKey)
+      : (apiKey || config.openaiApiKey);
+    const rawBaseUrl = isGemini
+      ? (baseUrl || geminiCompatibleBaseUrl)
+      : (baseUrl || config.openaiBaseUrl);
     const resolvedBaseUrl = normalizeBaseUrl(rawBaseUrl);
 
     console.log("[Agent] === New Request ===");
+    console.log("[Agent] provider:", isGemini ? "gemini" : "openai-compatible");
     console.log("[Agent] model:", model);
     console.log("[Agent] baseUrl (raw):", rawBaseUrl);
     console.log("[Agent] baseUrl (resolved):", resolvedBaseUrl);
@@ -87,9 +97,10 @@ export async function agentRoutes(app: FastifyInstance) {
     console.log("[Agent] hasApiKey:", !!resolvedApiKey);
 
     if (!resolvedApiKey) {
+      const envHint = isGemini ? "GOOGLE_API_KEY" : "OPENAI_API_KEY";
       return reply
         .status(400)
-        .send({ error: "API Key is required. Set OPENAI_API_KEY or pass apiKey in body." });
+        .send({ error: `API Key is required. Set ${envHint} or pass apiKey in body.` });
     }
 
     if (!messages.length) {
@@ -110,7 +121,11 @@ export async function agentRoutes(app: FastifyInstance) {
     const abortController = new AbortController();
     let clientDisconnected = false;
 
-    request.raw.on("close", () => {
+    // IMPORTANT:
+    // request.raw "close" can fire once request body is fully consumed,
+    // which does NOT mean the SSE client disconnected.
+    // Use "aborted" to detect client-side cancellation.
+    request.raw.on("aborted", () => {
       clientDisconnected = true;
       abortController.abort();
     });
@@ -209,35 +224,43 @@ export async function agentRoutes(app: FastifyInstance) {
             sseWrite(reply.raw, JSON.stringify({ type: "token", content: textContent }));
           }
         }
+
+        // Some providers may only provide content in "end" events.
+        // Use this as a fallback to avoid duplicating already streamed tokens.
+        if (event.event === "on_chat_model_end" && !hasContent) {
+          const rawContent = event.data?.output?.content;
+          let textContent = "";
+          if (typeof rawContent === "string") {
+            textContent = rawContent;
+          } else if (Array.isArray(rawContent)) {
+            for (const part of rawContent) {
+              if (typeof part === "string") {
+                textContent += part;
+              } else if (part?.type === "text" && typeof part.text === "string") {
+                textContent += part.text;
+              }
+            }
+          }
+          if (textContent) {
+            hasContent = true;
+            sseWrite(reply.raw, JSON.stringify({ type: "token", content: textContent }));
+          }
+        }
       }
 
       // ---------------------------------------------------------------
-      // If streamEvents produced ZERO content, the LLM call likely
-      // failed silently. Do a direct invoke to surface the real error.
+      // If streamEvents produced ZERO content, fail fast so the client
+      // gets immediate feedback instead of waiting for a second probe call.
       // ---------------------------------------------------------------
       if (!hasContent && !clientDisconnected) {
-        console.warn("[Agent] streamEvents produced no content — probing LLM for real error...");
-        try {
-          await llm.invoke([new HumanMessage("hi")]);
-          // If this succeeds, the LLM works but the agent produced nothing
-          sseWrite(
-            reply.raw,
-            JSON.stringify({
-              type: "error",
-              message: "Agent 未返回任何内容，请检查模型配置或稍后重试",
-            }),
-          );
-        } catch (probeError) {
-          const probeMsg = probeError instanceof Error ? probeError.message : String(probeError);
-          console.error("[Agent] LLM probe error:", probeMsg);
-          sseWrite(
-            reply.raw,
-            JSON.stringify({
-              type: "error",
-              message: `LLM 连接失败: ${probeMsg}`,
-            }),
-          );
-        }
+        console.warn("[Agent] streamEvents produced no content.");
+        sseWrite(
+          reply.raw,
+          JSON.stringify({
+            type: "error",
+            message: "Agent 未返回内容，请检查模型/API Key/Base URL 配置",
+          }),
+        );
       }
 
       if (!clientDisconnected) {

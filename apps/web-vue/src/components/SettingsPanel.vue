@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import type { AgentConfig } from "../composables/useAgent";
 
 const props = defineProps<{
@@ -17,7 +18,22 @@ const modelOptions = [
   { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo", group: "OpenAI" },
   { value: "deepseek-chat", label: "DeepSeek Chat", group: "DeepSeek" },
   { value: "deepseek-reasoner", label: "DeepSeek Reasoner", group: "DeepSeek" },
+  { value: "gemini-2.0-flash", label: "Gemini 2.0 Flash", group: "Google" },
+  { value: "gemini-2.5-flash-preview-05-20", label: "Gemini 2.5 Flash", group: "Google" },
+  { value: "gemini-2.5-pro-preview-05-06", label: "Gemini 2.5 Pro", group: "Google" },
 ];
+
+// Group models by provider for <optgroup>
+const groupedModels = computed(() => {
+  const groups: Record<string, typeof modelOptions> = {};
+  for (const opt of modelOptions) {
+    (groups[opt.group] ??= []).push(opt);
+  }
+  return Object.entries(groups).map(([label, options]) => ({ label, options }));
+});
+
+// Gemini models use Google's native API — baseUrl is not needed
+const isGeminiModel = computed(() => props.config.model.startsWith("gemini-"));
 
 function updateField(field: keyof AgentConfig, value: string | number) {
   emit("update:config", { ...props.config, [field]: value });
@@ -77,13 +93,14 @@ function handleOverlayClick(e: MouseEvent) {
               <div class="field">
                 <label class="field-label">
                   Base URL
-                  <span class="field-hint">API 服务地址</span>
+                  <span class="field-hint">{{ isGeminiModel ? 'Gemini 无需配置' : 'API 服务地址' }}</span>
                 </label>
                 <input
                   type="text"
                   class="field-input"
                   :value="config.baseUrl"
-                  placeholder="https://api.openai.com"
+                  :disabled="isGeminiModel"
+                  :placeholder="isGeminiModel ? 'Gemini 使用 Google 原生 API' : 'https://api.openai.com'"
                   @input="updateField('baseUrl', ($event.target as HTMLInputElement).value)"
                 />
               </div>
@@ -96,9 +113,11 @@ function handleOverlayClick(e: MouseEvent) {
                   :value="config.model"
                   @change="updateField('model', ($event.target as HTMLSelectElement).value)"
                 >
-                  <option v-for="opt in modelOptions" :key="opt.value" :value="opt.value">
-                    {{ opt.label }}
-                  </option>
+                  <optgroup v-for="group in groupedModels" :key="group.label" :label="group.label">
+                    <option v-for="opt in group.options" :key="opt.value" :value="opt.value">
+                      {{ opt.label }}
+                    </option>
+                  </optgroup>
                 </select>
               </div>
 
