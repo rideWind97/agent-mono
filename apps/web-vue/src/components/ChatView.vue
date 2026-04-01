@@ -5,7 +5,15 @@ import { useAgent } from "../composables/useAgent";
 import MessageBubble from "./MessageBubble.vue";
 import SettingsPanel from "./SettingsPanel.vue";
 
-const { messages, isLoading, agentConfig, sendMessage, clearMessages, saveConfig } = useAgent();
+const {
+  messages,
+  isLoading,
+  agentConfig,
+  sendMessage,
+  clearMessages,
+  saveConfig,
+  imagePreviews,
+} = useAgent();
 
 const inputText = ref("");
 const chatContainer = ref<HTMLElement | null>(null);
@@ -21,6 +29,7 @@ const quickPrompts = [
   { icon: "🌍", text: "对比一下北京和上海的天气", desc: "多工具协作" },
   { icon: "🔢", text: "计算圆周率的前10位，再告诉我现在的时间", desc: "多步推理" },
   { icon: "🎨", text: "把背景色设置为红色", desc: "设置背景色" },
+  { icon: "📷", text: "请让我上传一张图片并展示在界面中", desc: "图片上传" },
 ];
 
 async function handleSend() {
@@ -137,6 +146,7 @@ onMounted(() => {
             <span class="tool-tag">🧮 计算器</span>
             <span class="tool-tag">🕐 当前时间</span>
             <span class="tool-tag">🌐 翻译</span>
+            <span class="tool-tag">📷 图片上传</span>
           </div>
         </div>
       </div>
@@ -146,6 +156,13 @@ onMounted(() => {
         <TransitionGroup name="message">
           <MessageBubble v-for="msg in messages" :key="msg.id" :message="msg" />
         </TransitionGroup>
+
+        <div v-if="imagePreviews.length" class="image-previews">
+          <div v-for="img in imagePreviews" :key="img.id" class="image-preview-card">
+            <img :src="img.url" :alt="img.name" />
+            <span class="image-name">{{ img.name }}</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -279,6 +296,36 @@ onMounted(() => {
   @include mobile {
     gap: $space-3;
   }
+}
+
+.image-previews {
+  margin-top: $space-3;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: $space-3;
+}
+
+.image-preview-card {
+  @include flex-col;
+  gap: $space-2;
+  background: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: $radius-md;
+  padding: $space-2;
+
+  img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: $radius-sm;
+    border: 1px solid $border-light;
+  }
+}
+
+.image-name {
+  font-size: $font-xs;
+  color: $text-secondary;
+  @include line-clamp(1);
 }
 
 // ============================================

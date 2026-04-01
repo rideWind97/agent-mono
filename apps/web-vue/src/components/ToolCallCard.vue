@@ -50,6 +50,7 @@ const TOOL_ICONS: Record<string, string> = {
   calculator: "🧮",
   get_current_time: "🕐",
   translate: "🌐",
+  request_image_upload: "📷",
 };
 
 function formatOutput(output?: string): string {
