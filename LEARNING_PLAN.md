@@ -103,6 +103,11 @@
 - [x] 用 LangChain.js 实现一个带记忆的对话机器人
 - [x] 用 LCEL 构建一个 Prompt → LLM → OutputParser 链
 - [x] 用 LangGraph 实现一个简单的多步骤工作流
+  - 案例（多步骤可观测）：
+    - 输入：`(12 + 8) * 3`
+    - 预期步骤：`classify -> plan -> solveMath -> finalize`
+    - 调用：`POST /api/learning/langgraph-workflow`
+    - 返回中包含 `steps`，每一步有 `node` 与 `detail`，可清晰看到工作流路径
 
 ---
 

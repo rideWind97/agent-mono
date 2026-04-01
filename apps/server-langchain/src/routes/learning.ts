@@ -83,8 +83,10 @@ function evaluateExpression(input: string): number | null {
 const WorkflowState = Annotation.Root({
   input: Annotation<string>(),
   intent: Annotation<"math" | "general">(),
+  plan: Annotation<string>(),
   draft: Annotation<string>(),
   output: Annotation<string>(),
+  steps: Annotation<Array<{ node: string; detail: string }>>(),
 });
 
 export async function learningRoutes(app: FastifyInstance) {
@@ -224,12 +226,37 @@ export async function learningRoutes(app: FastifyInstance) {
     const graph = new StateGraph(WorkflowState)
       .addNode("classify", async (state) => {
         const maybeMath = evaluateExpression(state.input);
-        return { intent: maybeMath !== null ? "math" : "general" };
+        const intent = maybeMath !== null ? "math" : "general";
+        return {
+          intent,
+          steps: [
+            ...state.steps,
+            { node: "classify", detail: `识别任务类型为 ${intent}` },
+          ],
+        };
+      })
+      .addNode("makePlan", async (state) => {
+        const plan = state.intent === "math"
+          ? "执行数学计算 -> 组织结果说明"
+          : "生成简明回答 -> 组织结果说明";
+        return {
+          plan,
+          steps: [
+            ...state.steps,
+            { node: "makePlan", detail: plan },
+          ],
+        };
       })
       .addNode("solveMath", async (state) => {
         const value = evaluateExpression(state.input);
         const draft = value === null ? "无法解析为数学表达式。" : `计算结果: ${value}`;
-        return { draft };
+        return {
+          draft,
+          steps: [
+            ...state.steps,
+            { node: "solveMath", detail: draft },
+          ],
+        };
       })
       .addNode("generalAnswer", async (state) => {
         const prompt = ChatPromptTemplate.fromTemplate(
@@ -238,13 +265,26 @@ export async function learningRoutes(app: FastifyInstance) {
         const output = await prompt.pipe(llm).pipe(new StringOutputParser()).invoke({
           input: state.input,
         });
-        return { draft: output };
+        return {
+          draft: output,
+          steps: [
+            ...state.steps,
+            { node: "generalAnswer", detail: "已生成通用问题回答草稿" },
+          ],
+        };
       })
       .addNode("finalize", async (state) => {
-        return { output: `Workflow 完成（${state.intent}）: ${state.draft}` };
+        return {
+          output: `Workflow 完成（${state.intent}）: ${state.draft}`,
+          steps: [
+            ...state.steps,
+            { node: "finalize", detail: "输出最终结果" },
+          ],
+        };
       })
       .addEdge(START, "classify")
-      .addConditionalEdges("classify", (state) => {
+      .addEdge("classify", "makePlan")
+      .addConditionalEdges("makePlan", (state) => {
         return state.intent === "math" ? "solveMath" : "generalAnswer";
       })
       .addEdge("solveMath", "finalize")
@@ -255,13 +295,17 @@ export async function learningRoutes(app: FastifyInstance) {
     const result = await graph.invoke({
       input,
       intent: "general",
+      plan: "",
       draft: "",
       output: "",
+      steps: [],
     });
 
     return {
       input,
       intent: result.intent,
+      plan: result.plan,
+      steps: result.steps,
       output: result.output,
     };
   });
