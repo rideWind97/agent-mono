@@ -16,6 +16,7 @@ const router = useRouter();
 const navItems = [
   { icon: "💬", label: "AI 对话", to: "/" },
   { icon: "🤖", label: "Agent", to: "/agent" },
+  { icon: "📚", label: "学习页", to: "/learning" },
 ];
 
 function navigate(path: string) {

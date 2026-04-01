@@ -100,9 +100,9 @@
 - 🔧 [LangSmith](https://smith.langchain.com/)（调试与追踪平台）
 
 **实践任务：**
-- [ ] 用 LangChain.js 实现一个带记忆的对话机器人
-- [ ] 用 LCEL 构建一个 Prompt → LLM → OutputParser 链
-- [ ] 用 LangGraph 实现一个简单的多步骤工作流
+- [x] 用 LangChain.js 实现一个带记忆的对话机器人
+- [x] 用 LCEL 构建一个 Prompt → LLM → OutputParser 链
+- [x] 用 LangGraph 实现一个简单的多步骤工作流
 
 ---
 

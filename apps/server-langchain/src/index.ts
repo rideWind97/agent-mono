@@ -4,6 +4,7 @@ import Fastify from "fastify";
 import { config } from "./config.js";
 import { agentRoutes } from "./routes/agent.js";
 import { chatRoutes } from "./routes/chat.js";
+import { learningRoutes } from "./routes/learning.js";
 
 const app = Fastify({ logger: true });
 
@@ -16,6 +17,7 @@ await app.register(cors, {
 // Routes
 await app.register(agentRoutes);
 await app.register(chatRoutes);
+await app.register(learningRoutes);
 
 // Health check
 app.get("/api/health", async () => {

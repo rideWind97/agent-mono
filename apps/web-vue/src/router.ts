@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 
 import SimpleChatView from "./components/SimpleChatView.vue";
 import ChatView from "./components/ChatView.vue";
+import LearningView from "./components/LearningView.vue";
 
 const routes = [
   {
@@ -15,6 +16,12 @@ const routes = [
     name: "agent",
     component: ChatView,
     meta: { title: "Agent" },
+  },
+  {
+    path: "/learning",
+    name: "learning",
+    component: LearningView,
+    meta: { title: "Learning" },
   },
 ];
 
