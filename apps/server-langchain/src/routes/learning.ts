@@ -7,6 +7,7 @@ import { RunnableWithMessageHistory } from "@langchain/core/runnables";
 import { END, START, Annotation, StateGraph } from "@langchain/langgraph";
 import { ChatOpenAI } from "@langchain/openai";
 import type { FastifyInstance } from "fastify";
+import OpenAI from "openai";
 
 import { config } from "../config.js";
 
@@ -58,6 +59,107 @@ function createModel(params?: {
     configuration: { baseURL: resolvedBaseUrl },
     temperature: params?.temperature ?? 0.3,
   });
+}
+
+function createOpenAIClient(params?: {
+  apiKey?: string;
+  baseUrl?: string;
+}) {
+  const resolvedApiKey = params?.apiKey || config.openaiApiKey;
+  if (!resolvedApiKey) {
+    throw new Error("API Key is required. Set OPENAI_API_KEY or pass apiKey in body.");
+  }
+  const resolvedBaseUrl = normalizeBaseUrl(params?.baseUrl || config.openaiBaseUrl);
+  return {
+    client: new OpenAI({
+      apiKey: resolvedApiKey,
+      baseURL: resolvedBaseUrl,
+    }),
+    resolvedBaseUrl,
+  };
+}
+
+const SAFE_CITIES = new Set(["北京", "上海", "广州", "深圳", "杭州", "成都"]);
+const CITY_TIMEZONE: Record<string, string> = {
+  北京: "Asia/Shanghai",
+  上海: "Asia/Shanghai",
+  广州: "Asia/Shanghai",
+  深圳: "Asia/Shanghai",
+  杭州: "Asia/Shanghai",
+  成都: "Asia/Shanghai",
+};
+const WEATHER_DB: Record<string, { condition: string; tempC: number; humidity: number }> = {
+  北京: { condition: "晴", tempC: 21, humidity: 35 },
+  上海: { condition: "多云", tempC: 24, humidity: 62 },
+  广州: { condition: "阵雨", tempC: 28, humidity: 81 },
+  深圳: { condition: "雷阵雨", tempC: 29, humidity: 84 },
+  杭州: { condition: "阴", tempC: 23, humidity: 59 },
+  成都: { condition: "小雨", tempC: 20, humidity: 78 },
+};
+
+function assertSafeCity(cityRaw: string): string {
+  const city = cityRaw.trim();
+  if (!SAFE_CITIES.has(city)) {
+    throw new Error(`不支持的城市: ${city}。仅支持: ${Array.from(SAFE_CITIES).join("、")}`);
+  }
+  return city;
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withRetry<T>(label: string, fn: () => Promise<T>, retries = 3): Promise<T> {
+  const delays = [200, 500, 1000];
+  let lastError: unknown = null;
+  for (let i = 0; i < retries; i += 1) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (i < retries - 1) await wait(delays[i] || 1000);
+    }
+  }
+  throw new Error(`${label} 失败: ${lastError instanceof Error ? lastError.message : String(lastError)}`);
+}
+
+async function getWeather(cityRaw: string, date?: string) {
+  const city = assertSafeCity(cityRaw);
+  const data = WEATHER_DB[city];
+  if (!data) {
+    throw new Error(`weather db 中不存在城市: ${city}`);
+  }
+  return {
+    city,
+    date: date || "today",
+    ...data,
+    source: "mock-weather-db",
+  };
+}
+
+async function getCurrentTime(cityRaw: string) {
+  const city = assertSafeCity(cityRaw);
+  const tz = CITY_TIMEZONE[city] || "Asia/Shanghai";
+  return {
+    city,
+    timezone: tz,
+    time: new Intl.DateTimeFormat("zh-CN", {
+      hour12: false,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      timeZone: tz,
+    }).format(new Date()),
+  };
+}
+
+async function getClothingAdvice(tempDiff: number, weatherSummary: string) {
+  const level = Math.abs(tempDiff) >= 8 ? "温差大，建议分层穿搭" : "温差适中，可按常规穿搭";
+  return {
+    tempDiff,
+    weatherSummary,
+    advice: `${level}；天气概况：${weatherSummary}`,
+  };
 }
 
 const memoryStore = new Map<string, InMemoryChatMessageHistory>();
@@ -307,6 +409,201 @@ export async function learningRoutes(app: FastifyInstance) {
       plan: result.plan,
       steps: result.steps,
       output: result.output,
+    };
+  });
+
+  /**
+   * 任务 4: Function Calling（天气并行工具案例）
+   * POST /api/learning/function-call-weather
+   */
+  app.post<{
+    Body: {
+      query: string;
+      model?: string;
+      apiKey?: string;
+      baseUrl?: string;
+    };
+  }>("/api/learning/function-call-weather", async (request) => {
+    const { query, model, apiKey, baseUrl } = request.body;
+    if (!query?.trim()) {
+      throw new Error("query is required");
+    }
+    if (query.length > 500) {
+      throw new Error("query is too long");
+    }
+
+    const { client, resolvedBaseUrl } = createOpenAIClient({ apiKey, baseUrl });
+    const resolvedModel = model || inferDefaultModel(resolvedBaseUrl);
+
+    const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+      {
+        type: "function",
+        function: {
+          name: "get_weather",
+          description: "查询某城市天气（教学 mock 数据）",
+          parameters: {
+            type: "object",
+            properties: {
+              city: { type: "string", description: "城市名，如 北京" },
+              date: { type: "string", description: "日期，如 today/2026-04-01" },
+            },
+            required: ["city"],
+            additionalProperties: false,
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "get_current_time",
+          description: "查询某城市当前时间",
+          parameters: {
+            type: "object",
+            properties: {
+              city: { type: "string", description: "城市名，如 上海" },
+            },
+            required: ["city"],
+            additionalProperties: false,
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "get_clothing_advice",
+          description: "根据温差和天气概况生成穿衣建议",
+          parameters: {
+            type: "object",
+            properties: {
+              tempDiff: { type: "number", description: "两地温差（摄氏度）" },
+              weatherSummary: { type: "string", description: "天气摘要文本" },
+            },
+            required: ["tempDiff", "weatherSummary"],
+            additionalProperties: false,
+          },
+        },
+      },
+    ];
+
+    const flow: Array<Record<string, unknown>> = [];
+    const initialMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+      {
+        role: "system",
+        content:
+          "你是天气助理。优先调用工具；如果涉及两个城市，尽量并行调用工具。拿到工具结果后再给最终结论。不要编造工具结果。",
+      },
+      { role: "user", content: query.trim() },
+    ];
+
+    const first = await client.chat.completions.create({
+      model: resolvedModel,
+      messages: initialMessages,
+      tools,
+      tool_choice: "auto",
+      parallel_tool_calls: true,
+      temperature: 0.2,
+    });
+
+    const assistantMessage = first.choices[0]?.message;
+    const toolCalls = assistantMessage?.tool_calls || [];
+    const functionToolCalls = toolCalls.filter(
+      (call): call is OpenAI.Chat.Completions.ChatCompletionMessageFunctionToolCall => call.type === "function",
+    );
+    flow.push({
+      step: "assistant_tool_calls",
+      content: assistantMessage?.content || "",
+      toolCalls,
+    });
+
+    if (!functionToolCalls.length) {
+      return {
+        query,
+        answer: assistantMessage?.content || "",
+        flow,
+      };
+    }
+
+    const toolResults = await Promise.all(
+      functionToolCalls.map(async (call) => {
+        const fnName = call.function.name;
+        let args: Record<string, unknown> = {};
+        try {
+          args = JSON.parse(call.function.arguments || "{}") as Record<string, unknown>;
+        } catch {
+          // ignore malformed args
+        }
+
+        try {
+          if (fnName === "get_weather") {
+            const result = await withRetry("get_weather", () => getWeather(String(args.city || ""), args.date ? String(args.date) : undefined));
+            return { tool_call_id: call.id, name: fnName, result };
+          }
+
+          if (fnName === "get_current_time") {
+            const result = await withRetry("get_current_time", () => getCurrentTime(String(args.city || "")));
+            return { tool_call_id: call.id, name: fnName, result };
+          }
+
+          if (fnName === "get_clothing_advice") {
+            const result = await withRetry(
+              "get_clothing_advice",
+              () => getClothingAdvice(Number(args.tempDiff || 0), String(args.weatherSummary || "")),
+            );
+            return { tool_call_id: call.id, name: fnName, result };
+          }
+
+          return {
+            tool_call_id: call.id,
+            name: fnName,
+            result: { error: `unknown tool: ${fnName}` },
+          };
+        } catch (error) {
+          return {
+            tool_call_id: call.id,
+            name: fnName,
+            result: { error: error instanceof Error ? error.message : String(error) },
+          };
+        }
+      }),
+    );
+
+    flow.push({
+      step: "tool_results",
+      parallel: toolResults.length > 1,
+      results: toolResults,
+    });
+
+    const secondMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+      ...initialMessages,
+      {
+        role: "assistant",
+        content: assistantMessage?.content || "",
+        tool_calls: functionToolCalls,
+      },
+      ...toolResults.map((item) => ({
+        role: "tool" as const,
+        tool_call_id: item.tool_call_id,
+        content: JSON.stringify(item.result),
+      })),
+    ];
+
+    const second = await client.chat.completions.create({
+      model: resolvedModel,
+      messages: secondMessages,
+      temperature: 0.2,
+    });
+    const finalAnswer = second.choices[0]?.message?.content || "";
+    flow.push({
+      step: "assistant_final",
+      content: finalAnswer,
+    });
+
+    return {
+      query,
+      model: resolvedModel,
+      answer: finalAnswer,
+      toolCalls: toolResults,
+      flow,
     };
   });
 }

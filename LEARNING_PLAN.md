@@ -134,6 +134,51 @@
 - [ ] 实现多工具并行调用场景
 - [ ] 回顾本仓库的 `web-summarizer`，理解其 Function Call 流程
 
+**端到端案例（Web + Server）：天气 + 并行工具 Agent**
+
+- 业务目标：
+  - 用户输入：`“帮我对比北京和上海今天的天气，并告诉我两地当前时间与温差建议”`
+  - Agent 自动调用工具完成：天气查询 + 时间查询 + 汇总建议
+
+- Server 端实现（Fastify + LangChain）：
+  - 路由：`POST /api/agent/weather-compare`
+  - 工具定义（JSON Schema）：
+    - `get_weather(city: string, date?: string)`
+    - `get_current_time(city: string)`
+    - `get_clothing_advice(tempDiff: number, weatherSummary: string)`
+  - 关键点映射：
+    - `119 Function Calling 原理`：在 system prompt 中明确工具使用策略（先查天气/时间，再生成建议）
+    - `120 函数定义`：每个工具参数严格校验（zod/schema），禁止自由文本执行
+    - `121 并行调用`：北京/上海天气与时间可并发（`Promise.all` 或模型 parallel tool calls）
+    - `122 消息流`：完整记录 `tool_calls -> tool_result -> assistant_final`
+    - `123 错误重试`：天气 API 超时时指数退避重试（如 3 次：200ms/500ms/1000ms）
+    - `124 安全性`：城市名白名单/长度限制、工具超时、返回字段脱敏、禁止任意 URL
+
+- Web 端实现（Vue）：
+  - 页面：新增 `WeatherAgentView`（或在学习页加入“天气并行案例”卡片）
+  - 交互：
+    - 输入自然语言问题
+    - 实时展示工具调用卡片（开始/完成/失败）
+    - 渲染最终回答 + 结构化结果（两地天气、时间、温差建议）
+  - 前端需展示的流事件：
+    - `type=tool_start`（显示“正在查询北京天气...”）
+    - `type=tool_end`（显示工具结果）
+    - `type=token`（流式拼接最终回复）
+    - `type=error`（展示失败原因与重试结果）
+
+- 验收标准（DoD）：
+  - 能稳定完成“北京 vs 上海”比较，且最终回答包含天气 + 时间 + 建议
+  - 发生单工具失败时可重试并给出降级提示，不阻断整轮对话
+  - 前端可观察完整工具调用轨迹（含并行调用）
+  - 通过至少 3 组测试输入（晴天/雨天/接口超时场景）
+
+- 本仓库代码实现（可直接学习）：
+  - Server 路由：`apps/server-langchain/src/routes/learning.ts`
+    - 接口：`POST /api/learning/function-call-weather`
+    - 覆盖：工具 schema、并行工具执行、tool_call 消息流、重试与安全校验
+  - Web 页面：`apps/web-vue/src/components/LearningView.vue`
+    - 任务卡：`Function Call`，可直接发起请求并查看 `flow/toolCalls`
+
 ---
 
 ### 第五章：MCP 协议（Model Context Protocol）

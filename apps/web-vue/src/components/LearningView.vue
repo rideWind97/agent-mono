@@ -2,7 +2,7 @@
 import { computed, ref } from "vue";
 
 type Tone = "简洁" | "专业" | "口语化";
-type TaskKey = "memory" | "lcel" | "workflow";
+type TaskKey = "memory" | "lcel" | "workflow" | "functionCall";
 
 const loading = ref<null | TaskKey>(null);
 const errorText = ref("");
@@ -18,17 +18,26 @@ const lcelForm = ref<{ topic: string; tone: Tone }>({
   tone: "简洁",
 });
 const workflowForm = ref({ input: "" });
+const functionCallForm = ref({
+  query: "帮我对比北京和上海今天的天气，再告诉我两地当前时间，并给穿衣建议。",
+});
 
 const taskOptions: Array<{ key: TaskKey; icon: string; title: string; desc: string }> = [
   { key: "memory", icon: "🧠", title: "记忆对话", desc: "同 sessionId 复用历史上下文" },
   { key: "lcel", icon: "⛓️", title: "LCEL 链", desc: "Prompt → LLM → OutputParser" },
   { key: "workflow", icon: "🧭", title: "LangGraph 工作流", desc: "classify → solve/general → finalize" },
+  { key: "functionCall", icon: "🛠️", title: "Function Call", desc: "天气并行工具调用案例" },
 ];
 
 const examples: Record<TaskKey, string[]> = {
   memory: ["我叫小陈，请记住我的名字。", "我喜欢 TypeScript。", "你还记得我说了什么吗？"],
   lcel: ["RAG", "Function Calling", "多 Agent 协作"],
   workflow: ["(12 + 8) * 3", "什么是多模态模型？", "1024 / (2 * 8)"],
+  functionCall: [
+    "帮我对比北京和上海今天的天气，再告诉我两地当前时间，并给穿衣建议。",
+    "查一下广州和深圳天气，并给出通勤建议。",
+    "对比杭州和成都今天天气，温差大吗？",
+  ],
 };
 
 const resultText = computed(() => (result.value ? JSON.stringify(result.value, null, 2) : ""));
@@ -36,8 +45,10 @@ const runButtonText = computed(() => {
   if (loading.value === "memory") return "记忆对话请求中...";
   if (loading.value === "lcel") return "LCEL 链请求中...";
   if (loading.value === "workflow") return "工作流请求中...";
+  if (loading.value === "functionCall") return "Function Call 请求中...";
   if (selectedTask.value === "memory") return "运行记忆对话";
   if (selectedTask.value === "lcel") return "运行 LCEL 链";
+  if (selectedTask.value === "functionCall") return "运行 Function Call 案例";
   return "运行 LangGraph 工作流";
 });
 
@@ -61,7 +72,8 @@ async function callLearningApi<T>(path: string, body: Record<string, unknown>): 
 function useExample(text: string) {
   if (selectedTask.value === "memory") memoryForm.value.input = text;
   else if (selectedTask.value === "lcel") lcelForm.value.topic = text;
-  else workflowForm.value.input = text;
+  else if (selectedTask.value === "workflow") workflowForm.value.input = text;
+  else functionCallForm.value.query = text;
 }
 
 function clearResult() {
@@ -187,10 +199,26 @@ async function runWorkflow() {
   }
 }
 
+async function runFunctionCallCase() {
+  if (!functionCallForm.value.query.trim()) return;
+  loading.value = "functionCall";
+  errorText.value = "";
+  try {
+    result.value = await callLearningApi("/api/learning/function-call-weather", {
+      query: functionCallForm.value.query.trim(),
+    });
+  } catch (error) {
+    errorText.value = error instanceof Error ? error.message : String(error);
+  } finally {
+    loading.value = null;
+  }
+}
+
 async function runSelectedTask() {
   if (selectedTask.value === "memory") await runMemoryChat();
   else if (selectedTask.value === "lcel") await runLcelChain();
-  else await runWorkflow();
+  else if (selectedTask.value === "workflow") await runWorkflow();
+  else await runFunctionCallCase();
 }
 </script>
 
@@ -257,6 +285,18 @@ async function runSelectedTask() {
           <div class="field">
             <label>输入内容</label>
             <textarea v-model="workflowForm.input" class="field-textarea" rows="4" placeholder="例如： (12 + 8) * 3 或 什么是多模态模型？" />
+          </div>
+        </div>
+
+        <div v-if="selectedTask === 'functionCall'" class="form-grid">
+          <div class="field">
+            <label>用户问题</label>
+            <textarea
+              v-model="functionCallForm.query"
+              class="field-textarea"
+              rows="4"
+              placeholder="例如：帮我对比北京和上海今天的天气，再告诉我两地当前时间，并给穿衣建议。"
+            />
           </div>
         </div>
 
