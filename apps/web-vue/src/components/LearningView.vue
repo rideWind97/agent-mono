@@ -2,7 +2,7 @@
 import { computed, ref } from "vue";
 
 type Tone = "简洁" | "专业" | "口语化";
-type TaskKey = "memory" | "lcel" | "workflow" | "functionCall";
+type TaskKey = "memory" | "lcel" | "workflow" | "functionCall" | "rag";
 
 const loading = ref<null | TaskKey>(null);
 const errorText = ref("");
@@ -21,12 +21,16 @@ const workflowForm = ref({ input: "" });
 const functionCallForm = ref({
   query: "帮我对比北京和上海今天的天气，再告诉我两地当前时间，并给穿衣建议。",
 });
+const ragForm = ref({
+  query: "RAG 的评估和优化该怎么做？",
+});
 
 const taskOptions: Array<{ key: TaskKey; icon: string; title: string; desc: string }> = [
   { key: "memory", icon: "🧠", title: "记忆对话", desc: "同 sessionId 复用历史上下文" },
   { key: "lcel", icon: "⛓️", title: "LCEL 链", desc: "Prompt → LLM → OutputParser" },
   { key: "workflow", icon: "🧭", title: "LangGraph 工作流", desc: "classify → solve/general → finalize" },
   { key: "functionCall", icon: "🛠️", title: "Function Call", desc: "天气并行工具调用案例" },
+  { key: "rag", icon: "📚", title: "RAG Demo", desc: "查询扩展 + 检索 + 重排 + 评估" },
 ];
 
 const examples: Record<TaskKey, string[]> = {
@@ -38,6 +42,11 @@ const examples: Record<TaskKey, string[]> = {
     "查一下广州和深圳天气，并给出通勤建议。",
     "对比杭州和成都今天天气，温差大吗？",
   ],
+  rag: [
+    "RAG 的评估和优化该怎么做？",
+    "为什么 RAG 需要 query expansion 和 reranking？",
+    "RAG 怎么降低幻觉并提升相关性？",
+  ],
 };
 
 const resultText = computed(() => (result.value ? JSON.stringify(result.value, null, 2) : ""));
@@ -46,9 +55,11 @@ const runButtonText = computed(() => {
   if (loading.value === "lcel") return "LCEL 链请求中...";
   if (loading.value === "workflow") return "工作流请求中...";
   if (loading.value === "functionCall") return "Function Call 请求中...";
+  if (loading.value === "rag") return "RAG Demo 请求中...";
   if (selectedTask.value === "memory") return "运行记忆对话";
   if (selectedTask.value === "lcel") return "运行 LCEL 链";
   if (selectedTask.value === "functionCall") return "运行 Function Call 案例";
+  if (selectedTask.value === "rag") return "运行 RAG Demo";
   return "运行 LangGraph 工作流";
 });
 
@@ -73,7 +84,8 @@ function useExample(text: string) {
   if (selectedTask.value === "memory") memoryForm.value.input = text;
   else if (selectedTask.value === "lcel") lcelForm.value.topic = text;
   else if (selectedTask.value === "workflow") workflowForm.value.input = text;
-  else functionCallForm.value.query = text;
+  else if (selectedTask.value === "functionCall") functionCallForm.value.query = text;
+  else ragForm.value.query = text;
 }
 
 function clearResult() {
@@ -214,11 +226,27 @@ async function runFunctionCallCase() {
   }
 }
 
+async function runRagDemo() {
+  if (!ragForm.value.query.trim()) return;
+  loading.value = "rag";
+  errorText.value = "";
+  try {
+    result.value = await callLearningApi("/api/learning/rag-demo", {
+      query: ragForm.value.query.trim(),
+    });
+  } catch (error) {
+    errorText.value = error instanceof Error ? error.message : String(error);
+  } finally {
+    loading.value = null;
+  }
+}
+
 async function runSelectedTask() {
   if (selectedTask.value === "memory") await runMemoryChat();
   else if (selectedTask.value === "lcel") await runLcelChain();
   else if (selectedTask.value === "workflow") await runWorkflow();
-  else await runFunctionCallCase();
+  else if (selectedTask.value === "functionCall") await runFunctionCallCase();
+  else await runRagDemo();
 }
 </script>
 
@@ -300,6 +328,18 @@ async function runSelectedTask() {
           </div>
         </div>
 
+        <div v-if="selectedTask === 'rag'" class="form-grid">
+          <div class="field">
+            <label>RAG 问题</label>
+            <textarea
+              v-model="ragForm.query"
+              class="field-textarea"
+              rows="4"
+              placeholder="例如：RAG 的评估和优化该怎么做？"
+            />
+          </div>
+        </div>
+
         <div class="example-list">
           <span class="example-label">示例输入</span>
           <div class="example-chips">
@@ -313,6 +353,31 @@ async function runSelectedTask() {
       <section class="result-panel">
         <h3>执行结果</h3>
         <p v-if="errorText" class="error">{{ errorText }}</p>
+        <template v-else-if="selectedTask === 'rag' && result && typeof result === 'object'">
+          <div class="rag-metrics">
+            <span class="metric-pill">Faithfulness: {{ (result as any).metrics?.faithfulness ?? "-" }}</span>
+            <span class="metric-pill">Relevancy: {{ (result as any).metrics?.relevancy ?? "-" }}</span>
+            <span class="metric-pill">Context Recall: {{ (result as any).metrics?.contextRecall ?? "-" }}</span>
+          </div>
+          <div class="rag-block">
+            <strong>查询扩展</strong>
+            <ul>
+              <li v-for="q in ((result as any).expandedQueries || [])" :key="q">{{ q }}</li>
+            </ul>
+          </div>
+          <div class="rag-block">
+            <strong>命中片段</strong>
+            <ul>
+              <li v-for="c in ((result as any).selectedChunks || [])" :key="c.id">
+                [{{ c.docId }}] ({{ c.score }}) {{ c.text }}
+              </li>
+            </ul>
+          </div>
+          <div class="rag-block">
+            <strong>回答</strong>
+            <pre>{{ (result as any).answer }}</pre>
+          </div>
+        </template>
         <pre v-else-if="resultText">{{ resultText }}</pre>
         <p v-else class="placeholder">运行后结果会显示在这里</p>
       </section>
@@ -531,6 +596,40 @@ async function runSelectedTask() {
   padding: $space-3;
   font-size: $font-xs;
   font-family: $font-mono;
+}
+
+.rag-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+}
+
+.metric-pill {
+  font-size: $font-xs;
+  color: $text-secondary;
+  border: 1px solid $border-color;
+  border-radius: $radius-full;
+  padding: $space-1 $space-3;
+  background: $bg-chat;
+}
+
+.rag-block {
+  @include flex-col;
+  gap: $space-2;
+
+  strong {
+    font-size: $font-sm;
+    color: $text-primary;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: $space-4;
+    @include flex-col;
+    gap: $space-1;
+    color: $text-secondary;
+    font-size: $font-xs;
+  }
 }
 
 .error {

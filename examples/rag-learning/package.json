@@ -1,0 +1,12 @@
+{
+  "name": "rag-learning-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "demo": "tsx src/demo.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0",
+    "typescript": "^5.5.0"
+  }
+}

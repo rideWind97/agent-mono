@@ -162,6 +162,93 @@ async function getClothingAdvice(tempDiff: number, weatherSummary: string) {
   };
 }
 
+interface RagDoc {
+  id: string;
+  title: string;
+  text: string;
+}
+
+interface RagChunk {
+  id: string;
+  docId: string;
+  text: string;
+}
+
+const RAG_CORPUS: RagDoc[] = [
+  {
+    id: "rag-core",
+    title: "RAG Core",
+    text: "RAG 由检索与生成组成。先检索相关上下文，再基于证据生成回答。它可显著降低幻觉并提升可解释性。",
+  },
+  {
+    id: "rag-metrics",
+    title: "RAG Metrics",
+    text: "RAG 常见评估指标包括 Faithfulness、Relevancy、Context Recall。Faithfulness 强调答案是否忠实于证据。",
+  },
+  {
+    id: "rag-opt",
+    title: "RAG Optimization",
+    text: "RAG 优化手段包括 Query Expansion、Hybrid Search、MMR 和 Re-ranking。Hybrid Search 结合关键词匹配与向量语义检索。",
+  },
+];
+
+function tokenize(text: string): string[] {
+  return text.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
+}
+
+function sentenceChunkDocs(docs: RagDoc[]): RagChunk[] {
+  const chunks: RagChunk[] = [];
+  for (const doc of docs) {
+    const sentences = doc.text.split(/(?<=[。！？.!?])/).map((x) => x.trim()).filter(Boolean);
+    for (let i = 0; i < sentences.length; i += 1) {
+      const sentence = sentences[i];
+      if (!sentence) continue;
+      chunks.push({
+        id: `${doc.id}-${i}`,
+        docId: doc.id,
+        text: sentence,
+      });
+    }
+  }
+  return chunks;
+}
+
+function keywordScore(query: string, text: string): number {
+  const q = new Set(tokenize(query));
+  const t = new Set(tokenize(text));
+  if (!q.size) return 0;
+  let hit = 0;
+  for (const w of q) if (t.has(w)) hit += 1;
+  return hit / q.size;
+}
+
+function expandRagQuery(query: string): string[] {
+  const out = new Set<string>([query]);
+  const lowered = query.toLowerCase();
+  if (lowered.includes("评估")) {
+    out.add(`${query} faithfulness`);
+    out.add(`${query} context recall`);
+  }
+  if (lowered.includes("优化")) {
+    out.add(`${query} hybrid search`);
+    out.add(`${query} re-ranking`);
+  }
+  if (lowered.includes("rag")) {
+    out.add(`${query} retrieval augmented generation`);
+  }
+  return Array.from(out);
+}
+
+function simpleRerank(query: string, items: Array<{ chunk: RagChunk; score: number }>, topK = 4) {
+  return items
+    .map((x) => ({
+      ...x,
+      score: x.score * 0.7 + keywordScore(query, x.chunk.text) * 0.4,
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topK);
+}
+
 const memoryStore = new Map<string, InMemoryChatMessageHistory>();
 
 function getSessionHistory(sessionId: string): InMemoryChatMessageHistory {
@@ -604,6 +691,74 @@ export async function learningRoutes(app: FastifyInstance) {
       answer: finalAnswer,
       toolCalls: toolResults,
       flow,
+    };
+  });
+
+  /**
+   * 任务 5: RAG 检索管线可视化案例
+   * POST /api/learning/rag-demo
+   */
+  app.post<{
+    Body: {
+      query: string;
+      topK?: number;
+    };
+  }>("/api/learning/rag-demo", async (request) => {
+    const { query, topK = 4 } = request.body;
+    if (!query?.trim()) {
+      throw new Error("query is required");
+    }
+
+    const chunks = sentenceChunkDocs(RAG_CORPUS);
+    const expandedQueries = expandRagQuery(query);
+
+    const hybridCandidates = expandedQueries.flatMap((q) =>
+      chunks.map((chunk) => ({
+        chunk,
+        score: keywordScore(q, chunk.text),
+      })),
+    );
+
+    const dedup = new Map<string, { chunk: RagChunk; score: number }>();
+    for (const c of hybridCandidates) {
+      const prev = dedup.get(c.chunk.id);
+      if (!prev || c.score > prev.score) dedup.set(c.chunk.id, c);
+    }
+
+    const reranked = simpleRerank(query, Array.from(dedup.values()), topK);
+    const finalChunks = reranked.map((x) => x.chunk);
+    const answer = [
+      `问题：${query}`,
+      "基于检索证据总结：",
+      ...finalChunks.map((c, idx) => `${idx + 1}. ${c.text}`),
+      "结论：RAG 效果依赖检索召回与重排精度。",
+    ].join("\n");
+
+    const answerTokens = new Set(tokenize(answer));
+    const contextTokens = new Set(tokenize(finalChunks.map((x) => x.text).join(" ")));
+    const queryTokens = new Set(tokenize(query));
+    const faithfulness = answerTokens.size
+      ? Array.from(answerTokens).filter((t) => contextTokens.has(t)).length / answerTokens.size
+      : 0;
+    const relevancy = queryTokens.size
+      ? Array.from(queryTokens).filter((t) => answerTokens.has(t)).length / queryTokens.size
+      : 0;
+
+    return {
+      query,
+      expandedQueries,
+      selectedChunks: reranked.map((x) => ({
+        id: x.chunk.id,
+        docId: x.chunk.docId,
+        text: x.chunk.text,
+        score: Number(x.score.toFixed(3)),
+      })),
+      answer,
+      metrics: {
+        faithfulness: Number(faithfulness.toFixed(3)),
+        relevancy: Number(relevancy.toFixed(3)),
+        contextRecall: Number((finalChunks.length / Math.max(chunks.length, 1)).toFixed(3)),
+      },
     };
   });
 }
