@@ -115,8 +115,8 @@ function handleOverlayClick(e: MouseEvent) {
                 >
                   <optgroup v-for="group in groupedModels" :key="group.label" :label="group.label">
                     <option v-for="opt in group.options" :key="opt.value" :value="opt.value">
-                      {{ opt.label }}
-                    </option>
+                    {{ opt.label }}
+                  </option>
                   </optgroup>
                 </select>
               </div>

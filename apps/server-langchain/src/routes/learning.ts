@@ -25,6 +25,13 @@ function sseError(raw: ServerResponse, message: string) {
   sseDone(raw);
 }
 
+async function sseWriteText(raw: ServerResponse, text: string, chunkSize = 24) {
+  for (let i = 0; i < text.length; i += chunkSize) {
+    sseWrite(raw, JSON.stringify({ type: "token", content: text.slice(i, i + chunkSize) }));
+    await wait(12);
+  }
+}
+
 function normalizeBaseUrl(url: string): string {
   const trimmed = url.replace(/\/+$/, "");
   if (/\/v\d+$/.test(trimmed)) return trimmed;
@@ -353,6 +360,300 @@ export async function learningRoutes(app: FastifyInstance) {
             hasToken,
           }),
         );
+        sseDone(reply.raw);
+      }
+    } catch (error) {
+      if (clientDisconnected) return;
+      const message = error instanceof Error ? error.message : String(error);
+      sseError(reply.raw, message);
+    }
+  });
+
+  app.post<{
+    Body: {
+      task: "lcel" | "workflow" | "functionCall" | "rag";
+      input: string;
+      tone?: "简洁" | "专业" | "口语化";
+      model?: string;
+      apiKey?: string;
+      baseUrl?: string;
+      topK?: number;
+    };
+  }>("/api/learning/stream", async (request, reply) => {
+    const {
+      task, input, tone = "简洁", model, apiKey, baseUrl, topK = 4,
+    } = request.body;
+
+    if (!input?.trim()) {
+      return reply.status(400).send({ error: "input is required" });
+    }
+
+    reply.hijack();
+    reply.raw.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+      "Access-Control-Allow-Origin": "*",
+    });
+
+    let clientDisconnected = false;
+    request.raw.on("aborted", () => {
+      clientDisconnected = true;
+    });
+
+    try {
+      if (task === "lcel") {
+        const llm = createModel({ model, apiKey, baseUrl });
+        const prompt = ChatPromptTemplate.fromTemplate(
+          "请用{tone}风格，围绕“{topic}”输出 3 条要点，每条不超过 20 字。",
+        );
+        const chain = prompt.pipe(llm).pipe(new StringOutputParser());
+        const stream = await chain.stream({ topic: input.trim(), tone });
+        for await (const chunk of stream) {
+          if (clientDisconnected) break;
+          const token = typeof chunk === "string" ? chunk : String(chunk ?? "");
+          if (!token) continue;
+          sseWrite(reply.raw, JSON.stringify({ type: "token", content: token }));
+        }
+        if (!clientDisconnected) {
+          sseWrite(reply.raw, JSON.stringify({ type: "meta", task }));
+          sseDone(reply.raw);
+        }
+        return;
+      }
+
+      if (task === "workflow") {
+        const llm = createModel({ model, apiKey, baseUrl });
+        await sseWriteText(reply.raw, `### Workflow 开始\n\n输入：${input.trim()}\n\n`);
+        const maybeMath = evaluateExpression(input.trim());
+        const intent = maybeMath !== null ? "math" : "general";
+        await sseWriteText(reply.raw, `1. classify：识别任务类型为 \`${intent}\`\n`);
+        const plan = intent === "math"
+          ? "执行数学计算 -> 组织结果说明"
+          : "生成简明回答 -> 组织结果说明";
+        await sseWriteText(reply.raw, `2. makePlan：${plan}\n`);
+
+        let draft = "";
+        if (intent === "math") {
+          draft = maybeMath === null ? "无法解析为数学表达式。" : `计算结果: ${maybeMath}`;
+          await sseWriteText(reply.raw, `3. solveMath：${draft}\n`);
+        } else {
+          await sseWriteText(reply.raw, "3. generalAnswer：正在生成回答...\n");
+          const prompt = ChatPromptTemplate.fromTemplate(
+            "请对下面输入给出简明回答：\n{input}",
+          );
+          const stream = await prompt.pipe(llm).pipe(new StringOutputParser()).stream({
+            input: input.trim(),
+          });
+          let answer = "";
+          for await (const chunk of stream) {
+            if (clientDisconnected) break;
+            const token = typeof chunk === "string" ? chunk : String(chunk ?? "");
+            if (!token) continue;
+            answer += token;
+          }
+          draft = answer;
+          await sseWriteText(reply.raw, `3. generalAnswer：${draft}\n`);
+        }
+
+        await sseWriteText(reply.raw, `4. finalize：Workflow 完成（${intent}）: ${draft}`);
+        if (!clientDisconnected) {
+          sseWrite(reply.raw, JSON.stringify({ type: "meta", task, intent, plan }));
+          sseDone(reply.raw);
+        }
+        return;
+      }
+
+      if (task === "functionCall") {
+        const { client, resolvedBaseUrl } = createOpenAIClient({ apiKey, baseUrl });
+        const resolvedModel = model || inferDefaultModel(resolvedBaseUrl);
+        await sseWriteText(reply.raw, "### Function Calling 过程\n\n");
+
+        const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+          {
+            type: "function",
+            function: {
+              name: "get_weather",
+              description: "查询某城市天气（教学 mock 数据）",
+              parameters: {
+                type: "object",
+                properties: {
+                  city: { type: "string", description: "城市名，如 北京" },
+                  date: { type: "string", description: "日期，如 today/2026-04-01" },
+                },
+                required: ["city"],
+                additionalProperties: false,
+              },
+            },
+          },
+          {
+            type: "function",
+            function: {
+              name: "get_current_time",
+              description: "查询某城市当前时间",
+              parameters: {
+                type: "object",
+                properties: {
+                  city: { type: "string", description: "城市名，如 上海" },
+                },
+                required: ["city"],
+                additionalProperties: false,
+              },
+            },
+          },
+          {
+            type: "function",
+            function: {
+              name: "get_clothing_advice",
+              description: "根据温差和天气概况生成穿衣建议",
+              parameters: {
+                type: "object",
+                properties: {
+                  tempDiff: { type: "number", description: "两地温差（摄氏度）" },
+                  weatherSummary: { type: "string", description: "天气摘要文本" },
+                },
+                required: ["tempDiff", "weatherSummary"],
+                additionalProperties: false,
+              },
+            },
+          },
+        ];
+
+        const initialMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+          {
+            role: "system",
+            content:
+              "你是天气助理。优先调用工具；如果涉及两个城市，尽量并行调用工具。拿到工具结果后再给最终结论。不要编造工具结果。",
+          },
+          { role: "user", content: input.trim() },
+        ];
+
+        const first = await client.chat.completions.create({
+          model: resolvedModel,
+          messages: initialMessages,
+          tools,
+          tool_choice: "auto",
+          parallel_tool_calls: true,
+          temperature: 0.2,
+        });
+        const assistantMessage = first.choices[0]?.message;
+        const functionToolCalls = (assistantMessage?.tool_calls || []).filter(
+          (call): call is OpenAI.Chat.Completions.ChatCompletionMessageFunctionToolCall => call.type === "function",
+        );
+
+        await sseWriteText(
+          reply.raw,
+          `1. assistant_tool_calls：计划调用 ${functionToolCalls.length} 个工具\n`,
+        );
+
+        const toolResults = await Promise.all(
+          functionToolCalls.map(async (call) => {
+            const fnName = call.function.name;
+            let args: Record<string, unknown> = {};
+            try {
+              args = JSON.parse(call.function.arguments || "{}") as Record<string, unknown>;
+            } catch {
+              args = {};
+            }
+
+            if (fnName === "get_weather") {
+              const result = await withRetry(
+                "get_weather",
+                () => getWeather(String(args.city || ""), args.date ? String(args.date) : undefined),
+              );
+              return { tool_call_id: call.id, name: fnName, result };
+            }
+            if (fnName === "get_current_time") {
+              const result = await withRetry(
+                "get_current_time",
+                () => getCurrentTime(String(args.city || "")),
+              );
+              return { tool_call_id: call.id, name: fnName, result };
+            }
+            if (fnName === "get_clothing_advice") {
+              const result = await withRetry(
+                "get_clothing_advice",
+                () => getClothingAdvice(Number(args.tempDiff || 0), String(args.weatherSummary || "")),
+              );
+              return { tool_call_id: call.id, name: fnName, result };
+            }
+            return { tool_call_id: call.id, name: fnName, result: { error: `unknown tool: ${fnName}` } };
+          }),
+        );
+
+        for (const item of toolResults) {
+          if (clientDisconnected) break;
+          await sseWriteText(reply.raw, `2. tool_result ${item.name}\n\`\`\`json\n${JSON.stringify(item.result, null, 2)}\n\`\`\`\n`);
+        }
+
+        const secondMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+          ...initialMessages,
+          {
+            role: "assistant",
+            content: assistantMessage?.content || "",
+            tool_calls: functionToolCalls,
+          },
+          ...toolResults.map((item) => ({
+            role: "tool" as const,
+            tool_call_id: item.tool_call_id,
+            content: JSON.stringify(item.result),
+          })),
+        ];
+
+        const finalStream = await client.chat.completions.create({
+          model: resolvedModel,
+          messages: secondMessages,
+          temperature: 0.2,
+          stream: true,
+        });
+
+        await sseWriteText(reply.raw, "3. assistant_final\n");
+        for await (const part of finalStream) {
+          if (clientDisconnected) break;
+          const token = part.choices[0]?.delta?.content || "";
+          if (!token) continue;
+          sseWrite(reply.raw, JSON.stringify({ type: "token", content: token }));
+        }
+
+        if (!clientDisconnected) {
+          sseWrite(reply.raw, JSON.stringify({ type: "meta", task, model: resolvedModel }));
+          sseDone(reply.raw);
+        }
+        return;
+      }
+
+      const chunks = sentenceChunkDocs(RAG_CORPUS);
+      const expandedQueries = expandRagQuery(input.trim());
+      const hybridCandidates = expandedQueries.flatMap((q) =>
+        chunks.map((chunk) => ({
+          chunk,
+          score: keywordScore(q, chunk.text),
+        })),
+      );
+      const dedup = new Map<string, { chunk: RagChunk; score: number }>();
+      for (const c of hybridCandidates) {
+        const prev = dedup.get(c.chunk.id);
+        if (!prev || c.score > prev.score) dedup.set(c.chunk.id, c);
+      }
+      const reranked = simpleRerank(input.trim(), Array.from(dedup.values()), topK);
+      const finalChunks = reranked.map((x) => x.chunk);
+      const answer = [
+        `问题：${input.trim()}`,
+        "基于检索证据总结：",
+        ...finalChunks.map((c, idx) => `${idx + 1}. ${c.text}`),
+        "结论：RAG 效果依赖检索召回与重排精度。",
+      ].join("\n");
+
+      await sseWriteText(reply.raw, "### RAG 检索过程\n\n");
+      await sseWriteText(reply.raw, `1. 查询扩展\n${expandedQueries.map((q) => `- ${q}`).join("\n")}\n\n`);
+      await sseWriteText(reply.raw, "2. 命中片段\n");
+      for (const item of reranked) {
+        if (clientDisconnected) break;
+        await sseWriteText(reply.raw, `- [${item.chunk.docId}] (${Number(item.score.toFixed(3))}) ${item.chunk.text}\n`);
+      }
+      await sseWriteText(reply.raw, `\n3. 最终回答\n${answer}`);
+      if (!clientDisconnected) {
+        sseWrite(reply.raw, JSON.stringify({ type: "meta", task, expandedQueries, selectedCount: reranked.length }));
         sseDone(reply.raw);
       }
     } catch (error) {
