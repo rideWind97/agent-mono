@@ -276,6 +276,81 @@ function evaluateExpression(input: string): number | null {
   }
 }
 
+type AgentDemoMode = "react" | "plan-execute" | "supervisor" | "swarm";
+
+interface AgentDemoMemory {
+  shortTerm: string[];
+  longTerm: Record<string, string>;
+}
+
+function createAgentMemory(seed?: Partial<AgentDemoMemory>): AgentDemoMemory {
+  return {
+    shortTerm: seed?.shortTerm ? [...seed.shortTerm] : [],
+    longTerm: seed?.longTerm ? { ...seed.longTerm } : {},
+  };
+}
+
+function pushAgentMemory(memory: AgentDemoMemory, item: string) {
+  memory.shortTerm.push(item);
+  if (memory.shortTerm.length > 12) memory.shortTerm.shift();
+}
+
+function writeAgentLongTerm(memory: AgentDemoMemory, key: string, value: string) {
+  memory.longTerm[key] = value;
+}
+
+function guardAgentInput(task: string): { blocked: boolean; reason?: string } {
+  if (task.length > 500) {
+    return { blocked: true, reason: "输入过长，已阻断。" };
+  }
+  if (/删除|drop\s+table|转账|production/i.test(task)) {
+    return { blocked: true, reason: "检测到高风险操作，需人工审批（HITL）。" };
+  }
+  return { blocked: false };
+}
+
+function humanApprove(task: string): { approved: boolean; message: string } {
+  if (/删除|drop\s+table|转账|production/i.test(task)) {
+    return { approved: false, message: `人工审批未通过：${task}` };
+  }
+  return { approved: true, message: "人工审批通过" };
+}
+
+function selectAgentTools(task: string): string[] {
+  const tools: string[] = [];
+  if (/计算|算|[\d+\-*/()]/.test(task)) tools.push("calculator");
+  if (/代码|实现|函数|接口/.test(task)) tools.push("code");
+  if (/对比|总结|调研|资料/.test(task) && !tools.includes("search")) tools.unshift("search");
+  if (!tools.length) tools.push("search");
+  return tools;
+}
+
+function runAgentTool(tool: string, task: string): string {
+  if (tool === "search") {
+    return `搜索结果：找到与“${task}”相关的 3 条资料摘要。`;
+  }
+  if (tool === "calculator") {
+    const expr = task.match(/[\d+\-*/().\s]+/)?.[0]?.trim();
+    if (!expr) return "计算器：未识别到可计算表达式。";
+    const value = evaluateExpression(expr);
+    return value === null ? "计算器：表达式解析失败。" : `计算器：${expr} = ${value}`;
+  }
+  if (tool === "code") {
+    return `代码工具：已生成伪代码草案（任务：${task}）。`;
+  }
+  return `未知工具：${tool}`;
+}
+
+function makeAgentPlan(task: string): string[] {
+  if (/对比|比较/.test(task)) {
+    return ["收集两方信息", "提取差异点", "输出结论与建议"];
+  }
+  if (/实现|开发/.test(task)) {
+    return ["分析需求边界", "拆解实现步骤", "给出代码草案"];
+  }
+  return ["检索背景信息", "提炼关键点", "输出结构化结论"];
+}
+
 const WorkflowState = Annotation.Root({
   input: Annotation<string>(),
   intent: Annotation<"math" | "general">(),
@@ -371,9 +446,10 @@ export async function learningRoutes(app: FastifyInstance) {
 
   app.post<{
     Body: {
-      task: "lcel" | "workflow" | "functionCall" | "rag";
+      task: "lcel" | "workflow" | "functionCall" | "rag" | "agent";
       input: string;
       tone?: "简洁" | "专业" | "口语化";
+      agentMode?: AgentDemoMode;
       model?: string;
       apiKey?: string;
       baseUrl?: string;
@@ -381,7 +457,7 @@ export async function learningRoutes(app: FastifyInstance) {
     };
   }>("/api/learning/stream", async (request, reply) => {
     const {
-      task, input, tone = "简洁", model, apiKey, baseUrl, topK = 4,
+      task, input, tone = "简洁", agentMode = "react", model, apiKey, baseUrl, topK = 4,
     } = request.body;
 
     if (!input?.trim()) {
@@ -617,6 +693,121 @@ export async function learningRoutes(app: FastifyInstance) {
 
         if (!clientDisconnected) {
           sseWrite(reply.raw, JSON.stringify({ type: "meta", task, model: resolvedModel }));
+          sseDone(reply.raw);
+        }
+        return;
+      }
+
+      if (task === "agent") {
+        const memory = createAgentMemory({
+          longTerm: {
+            userPreference: "喜欢结构化回答",
+          },
+        });
+        const taskInput = input.trim();
+
+        await sseWriteText(reply.raw, `### Agent Demo（${agentMode}）\n\n`);
+        await sseWriteText(reply.raw, `0. observe：收到任务 \`${taskInput}\`\n`);
+
+        const guard = guardAgentInput(taskInput);
+        if (guard.blocked) {
+          await sseWriteText(reply.raw, `1. think：${guard.reason}\n`);
+          const approval = humanApprove(taskInput);
+          await sseWriteText(reply.raw, `2. act：${approval.message}\n`);
+          const blockedOutput = approval.approved
+            ? "审批通过，继续执行。"
+            : "任务被安全策略阻断，终止执行。";
+          await sseWriteText(reply.raw, `3. final：${blockedOutput}\n`);
+          if (!clientDisconnected) {
+            sseWrite(reply.raw, JSON.stringify({
+              type: "meta",
+              task,
+              agentMode,
+              blocked: !approval.approved,
+              memory,
+            }));
+            sseDone(reply.raw);
+          }
+          return;
+        }
+
+        if (agentMode === "react") {
+          const selectedTools = selectAgentTools(taskInput);
+          await sseWriteText(reply.raw, `1. think：选择工具 ${selectedTools.join(", ")}\n`);
+          for (const tool of selectedTools) {
+            const result = runAgentTool(tool, taskInput);
+            pushAgentMemory(memory, `${tool}: ${result}`);
+            await sseWriteText(reply.raw, `2. act：[${tool}] ${result}\n`);
+          }
+          writeAgentLongTerm(memory, "lastTask", taskInput);
+          await sseWriteText(
+            reply.raw,
+            `3. final：完成 ReAct 循环\n\n### 短期记忆\n${memory.shortTerm.map((x, i) => `${i + 1}. ${x}`).join("\n")}\n\n### 长期记忆\n\`\`\`json\n${JSON.stringify(memory.longTerm, null, 2)}\n\`\`\``,
+          );
+          if (!clientDisconnected) {
+            sseWrite(reply.raw, JSON.stringify({ type: "meta", task, agentMode, memory }));
+            sseDone(reply.raw);
+          }
+          return;
+        }
+
+        if (agentMode === "plan-execute") {
+          const plan = makeAgentPlan(taskInput);
+          await sseWriteText(reply.raw, `1. think：计划 ${plan.join(" -> ")}\n`);
+          for (const step of plan) {
+            const tool = /代码|实现/.test(step) ? "code" : "search";
+            const result = runAgentTool(tool, `${taskInput} | 子任务:${step}`);
+            pushAgentMemory(memory, `${step} => ${result}`);
+            await sseWriteText(reply.raw, `2. act：${step} -> ${tool}\n`);
+          }
+          await sseWriteText(
+            reply.raw,
+            `3. final：计划执行完成\n\n### 计划结果\n${memory.shortTerm.map((x, i) => `${i + 1}. ${x}`).join("\n")}`,
+          );
+          if (!clientDisconnected) {
+            sseWrite(reply.raw, JSON.stringify({ type: "meta", task, agentMode, plan, memory }));
+            sseDone(reply.raw);
+          }
+          return;
+        }
+
+        if (agentMode === "supervisor") {
+          await sseWriteText(reply.raw, "1. think：拆分任务给 researcher / analyst / coder\n");
+          const research = runAgentTool("search", `${taskInput}（research）`);
+          const analysis = runAgentTool("calculator", `${taskInput}（analysis）`);
+          const coding = runAgentTool("code", `${taskInput}（coding）`);
+          pushAgentMemory(memory, `researcher: ${research}`);
+          pushAgentMemory(memory, `analyst: ${analysis}`);
+          pushAgentMemory(memory, `coder: ${coding}`);
+          await sseWriteText(reply.raw, `2. act：researcher -> ${research}\n`);
+          await sseWriteText(reply.raw, `3. act：analyst -> ${analysis}\n`);
+          await sseWriteText(reply.raw, `4. act：coder -> ${coding}\n`);
+          await sseWriteText(
+            reply.raw,
+            `5. final：Supervisor 汇总完成\n\n### 汇总\n- ${research}\n- ${analysis}\n- ${coding}`,
+          );
+          if (!clientDisconnected) {
+            sseWrite(reply.raw, JSON.stringify({ type: "meta", task, agentMode, memory }));
+            sseDone(reply.raw);
+          }
+          return;
+        }
+
+        const hop1 = runAgentTool("search", `${taskInput}（research）`);
+        pushAgentMemory(memory, `A: ${hop1}`);
+        await sseWriteText(reply.raw, `1. act：Agent-A(research) -> ${hop1}\n`);
+        const hop2 = runAgentTool("calculator", `${taskInput} | based on: ${hop1}`);
+        pushAgentMemory(memory, `B: ${hop2}`);
+        await sseWriteText(reply.raw, `2. act：Agent-B(analysis) -> ${hop2}\n`);
+        const hop3 = runAgentTool("code", `${taskInput} | based on: ${hop2}`);
+        pushAgentMemory(memory, `C: ${hop3}`);
+        await sseWriteText(reply.raw, `3. act：Agent-C(coding) -> ${hop3}\n`);
+        await sseWriteText(
+          reply.raw,
+          `4. final：Swarm 协作完成\n\n### 接力结果\n${memory.shortTerm.map((x) => `- ${x}`).join("\n")}`,
+        );
+        if (!clientDisconnected) {
+          sseWrite(reply.raw, JSON.stringify({ type: "meta", task, agentMode, memory }));
           sseDone(reply.raw);
         }
         return;

@@ -17,6 +17,7 @@ const navItems = [
   { icon: "💬", label: "AI 对话", to: "/" },
   { icon: "🤖", label: "Agent", to: "/agent" },
   { icon: "📚", label: "学习页", to: "/learning" },
+  { icon: "🧠", label: "Agent 学习", to: "/agent-learning" },
 ];
 
 function navigate(path: string) {

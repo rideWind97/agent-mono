@@ -91,7 +91,7 @@ export function useAgent() {
         tool: event.tool || "",
         output: event.output,
       };
-      void dispatchToolEffect(event.tool || "", event.output, {
+      dispatchToolEffect(toolEvent.tool, toolEvent.output, {
         addImagePreview,
         appendAssistantText: (text) => appendAssistantById(assistantId, text),
       });

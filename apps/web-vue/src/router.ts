@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import SimpleChatView from "./components/SimpleChatView.vue";
 import ChatView from "./components/ChatView.vue";
 import LearningView from "./components/LearningView.vue";
+import AgentLearningView from "./components/AgentLearningView.vue";
 
 const routes = [
   {
@@ -22,6 +23,12 @@ const routes = [
     name: "learning",
     component: LearningView,
     meta: { title: "Learning" },
+  },
+  {
+    path: "/agent-learning",
+    name: "agent-learning",
+    component: AgentLearningView,
+    meta: { title: "Agent Learning" },
   },
 ];
 

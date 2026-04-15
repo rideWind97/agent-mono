@@ -231,10 +231,10 @@
 - 🔧 [LlamaIndex](https://www.llamaindex.ai/)（RAG 专用框架）
 
 **实践任务：**
-- [ ] 将一组 Markdown 文档向量化并存入 Chroma
-- [ ] 实现基于向量搜索的问答系统
-- [ ] 对比不同 Chunking 策略对检索质量的影响
-- [ ] 加入 Re-ranking 优化检索结果
+- [x] 将一组 Markdown 文档向量化并存入 Chroma
+- [x] 实现基于向量搜索的问答系统
+- [x] 对比不同 Chunking 策略对检索质量的影响
+- [x] 加入 Re-ranking 优化检索结果
 
 ---
 
