@@ -11,6 +11,8 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "dev:csweb": "pnpm --filter @agent-mono/cs-web dev",
+    "dev:cs-server": "pnpm --filter @agent-mono/cs-server dev",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
