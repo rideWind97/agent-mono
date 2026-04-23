@@ -1,0 +1,24 @@
+{
+  "name": "agent-practice",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "demo:react": "tsx src/01-react-agent.ts",
+    "demo:tools": "tsx src/02-multi-tools-agent.ts",
+    "demo:supervisor": "tsx src/03-supervisor-multi-agent.ts",
+    "demo:memory": "tsx src/04-memory-agent.ts",
+    "demo:guardrails": "tsx src/05-guardrails-agent.ts",
+    "demo:all": "tsx src/run-all.ts"
+  },
+  "dependencies": {
+    "@langchain/core": "^1.0.0",
+    "@langchain/langgraph": "^1.0.0",
+    "@langchain/openai": "^1.0.0",
+    "dotenv": "^16.4.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0",
+    "typescript": "^5.5.0"
+  }
+}
