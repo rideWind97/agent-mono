@@ -89,7 +89,7 @@ flowchart TB
 在开始 Week 1 之前完成：
 
 - [x] 克隆并安装依赖：`pnpm install`（仓库根目录）
-- [ ] 注册至少一个 LLM API（OpenAI / DeepSeek / 通义千问 任选）→ 填入根目录 `.env`
+- [x] 注册至少一个 LLM API（OpenAI / DeepSeek / 通义千问 任选）→ 填入根目录 `.env`
 - [x] 复制 `.env.example` → `.env`（根目录一份即可，示例会向上读取）
 - [x] 验证 Node.js ≥ 18，能运行 `pnpm exec tsx --version`
 - [x] 创建笔记目录：`docs/learning-notes/`
