@@ -340,9 +340,10 @@
 - 📖 [Hugging Face PEFT 文档](https://huggingface.co/docs/peft)（LoRA 等轻量微调）
 - 📖 [Unsloth](https://github.com/unslothai/unsloth)（2x 速度微调工具）
 - 📖 [LLaMA-Factory](https://github.com/hiyouga/LLaMA-Factory)（中文社区微调框架）
+- 🔧 仓库示例：`examples/finetuning-practice/`（`FINETUNING_PRACTICE_GUIDE.md`）
 
 **实践任务：**
-- [ ] 准备一份微调数据集（至少 50 条高质量样本）
+- [ ] 准备一份微调数据集（至少 50 条高质量样本）— 见 `examples/finetuning-practice/`
 - [ ] 通过 OpenAI API 完成一次微调
 - [ ] 对比微调前后的模型表现
 

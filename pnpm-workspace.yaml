@@ -4,3 +4,4 @@ packages:
   - "tooling/*"
   - "examples/agent-practice"
   - "examples/workflow-practice"
+  - "examples/finetuning-practice"
