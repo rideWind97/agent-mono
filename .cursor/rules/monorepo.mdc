@@ -1,0 +1,44 @@
+---
+description: agent-mono  monorepo 架构约定 — apps/web + apps/server + packages/shared
+alwaysApply: true
+---
+
+# Monorepo 架构
+
+## 目录职责
+
+| 路径 | 包名 | 职责 |
+|------|------|------|
+| `apps/web` | `@agent-mono/web` | Vue 3 前端，Vite dev 端口 5173 |
+| `apps/server` | `@agent-mono/server` | Fastify 后端，默认端口 3001 |
+| `packages/shared` | `@agent-mono/shared` | Web / Server 共享类型与常量 |
+| `examples/my-learning` | `@agent-mono/my-learning` | Week 1–2 CLI 练习脚本 |
+| `examples/*` | — | 按主题拆分的独立练习（LangGraph、MCP 等） |
+
+## 开发命令
+
+```bash
+pnpm dev              # 同时启动 web + server
+pnpm dev:web          # 仅前端
+pnpm dev:server       # 仅后端
+```
+
+Web 通过 Vite proxy 将 `/api` 转发到 `http://localhost:3001`。
+
+## 代码放置原则
+
+- **需要 UI 的功能** → `apps/web/src/views/` 或 `components/`
+- **需要 API / Agent / LLM 的功能** → `apps/server/src/routes/`
+- **前后端共用的类型** → `packages/shared/src/`，禁止在 web/server 各写一份
+- **纯 CLI 实验、不联调 UI** → `examples/` 下独立 package
+
+## 新增 API 流程
+
+1. 在 `packages/shared` 定义 Request / Response 类型
+2. 在 `apps/server/src/routes/` 实现路由并注册
+3. 在 `apps/web/src/api/` 封装 fetch 调用
+4. 在 `apps/web/src/views/` 编写页面
+
+## 环境变量
+
+统一放在**仓库根目录** `.env`，server 与 examples 向上读取，不要各 app 各一份密钥文件。

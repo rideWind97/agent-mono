@@ -2,7 +2,7 @@
   "name": "agent-mono",
   "version": "0.0.0",
   "private": true,
-  "description": "Enterprise monorepo powered by pnpm + turborepo",
+  "description": "Agent 学习 monorepo — Web + Server 同仓开发",
   "packageManager": "pnpm@10.18.2",
   "engines": {
     "node": ">=20.0.0",
@@ -10,42 +10,36 @@
   },
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev",
-    "dev:csweb": "pnpm --filter @agent-mono/cs-web dev",
-    "dev:cs-server": "pnpm --filter @agent-mono/cs-server dev",
+    "dev": "turbo run build --filter=@agent-mono/shared && turbo run dev --filter=@agent-mono/web --filter=@agent-mono/server",
+    "dev:web": "turbo run build --filter=@agent-mono/shared && turbo run dev --filter=@agent-mono/web",
+    "dev:server": "turbo run build --filter=@agent-mono/shared && turbo run dev --filter=@agent-mono/server",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,vue,json,md,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,vue,json,md,css}\"",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run test",
+    "test": "turbo run typecheck lint",
     "clean": "turbo run clean && rm -rf node_modules .turbo",
-    "changeset": "changeset",
-    "version-packages": "changeset version",
-    "release": "turbo run build --filter='./packages/*' && changeset publish",
-    "prepare": "husky"
+    "prepare": "husky",
+    "week1": "pnpm --filter @agent-mono/my-learning week1"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.27.0",
     "@types/node": "^22.0.0",
     "eslint": "^9.0.0",
     "husky": "^9.0.0",
     "lint-staged": "^15.0.0",
     "prettier": "^3.0.0",
+    "tsx": "^4.19.3",
     "turbo": "^2.0.0",
     "typescript": "^5.5.0"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx}": [
+    "*.{ts,tsx,js,jsx,vue}": [
       "eslint --fix",
       "prettier --write"
     ],
     "*.{json,md,css,yaml,yml}": [
       "prettier --write"
     ]
-  },
-  "dependencies": {
-    "@langchain/core": "^1.1.36",
-    "@langchain/openai": "^1.4.1"
   }
 }

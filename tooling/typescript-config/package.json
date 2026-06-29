@@ -4,15 +4,7 @@
   "private": true,
   "exports": {
     "./base.json": "./base.json",
-    "./react-library.json": "./react-library.json",
     "./node-library.json": "./node-library.json",
-    "./react-app.json": "./react-app.json",
     "./node-app.json": "./node-app.json"
-  },
-  "dependencies": {
-    "@langchain/core": "^1.1.36",
-    "@langchain/tavily": "^1.2.0",
-    "deepagents": "^1.8.6",
-    "langchain": "^1.2.37"
   }
 }

@@ -1,4 +1,5 @@
 // Re-export all modules
-export * from "./utils";
-export * from "./types";
+export * from "./chat";
 export * from "./constants";
+export * from "./types";
+export * from "./utils";
