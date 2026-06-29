@@ -129,16 +129,16 @@ pnpm week1                 # CLI 对话练习
 
 #### 实践任务
 
-- [ ] 注册 API，用 curl 或 Postman 发第一条 chat 请求
-- [ ] 新建 `examples/my-learning/src/week1-chat.ts`：CLI 多轮对话（已有 starter，请读懂并改造）
-- [ ] 跑通 Web 对话页：`pnpm dev` 后访问 `/chat`（Web → Server → LLM）
-- [ ] 实验：同一问题分别用 `temperature: 0` 和 `temperature: 1.2`，记录输出差异
-- [ ] 实验：统计一次请求的 input / output token 数（看 API 响应里的 `usage` 字段）
+- [x] 注册 API，用 curl 或 Postman 发第一条 chat 请求 → `pnpm week1:curl`
+- [x] 新建 `examples/my-learning/src/week1-chat.ts`：CLI 多轮对话（已重构，共用 `lib/chat-api.ts`）
+- [x] 跑通 Web 对话页：`pnpm dev` 后访问 `/chat`（Web → Server → LLM）
+- [x] 实验：同一问题分别用 `temperature: 0` 和 `temperature: 1.2` → `pnpm week1:experiments`
+- [x] 实验：统计 input / output token → 见 `docs/learning-notes/week-1.md`
 
 #### 验收
 
-- [ ] 能解释 Token、Temperature 是什么
-- [ ] 脚本可在终端连续对话至少 5 轮
+- [x] 能解释 Token、Temperature 是什么
+- [x] 脚本可在终端连续对话至少 5 轮（本地运行 `pnpm week1` 自测）
 
 ---
 

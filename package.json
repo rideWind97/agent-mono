@@ -21,7 +21,9 @@
     "test": "turbo run typecheck lint",
     "clean": "turbo run clean && rm -rf node_modules .turbo",
     "prepare": "husky",
-    "week1": "pnpm --filter @agent-mono/my-learning week1"
+    "week1": "pnpm --filter @agent-mono/my-learning week1",
+    "week1:curl": "pnpm --filter @agent-mono/my-learning week1:curl",
+    "week1:experiments": "pnpm --filter @agent-mono/my-learning week1:experiments"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
