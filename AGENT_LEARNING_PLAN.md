@@ -164,15 +164,15 @@ pnpm week1                 # CLI 对话练习
 
 #### 实践任务
 
-- [ ] 写一个「代码审查助手」System Prompt（检查 bug、风格、安全）
-- [ ] Few-shot：让模型输出固定 JSON（如 `{ "sentiment": "positive", "score": 0.9 }`）
-- [ ] CoT：让模型分步解一道数学题，观察中间推理步骤
-- [ ] 对比 3 种策略的输出质量，结论写入 `docs/learning-notes/week2.md`
+- [x] 写一个「代码审查助手」System Prompt → `examples/my-learning/src/prompts/code-review.ts`
+- [x] Few-shot：让模型输出固定 JSON → `prompts/few-shot-json.ts`，运行 `pnpm week2`
+- [x] CoT：分步解数学题 → `prompts/cot-math.ts`
+- [x] 对比 3 种策略 → 见 `docs/learning-notes/week2.md`
 
 #### 验收
 
-- [ ] 模型能稳定返回合法 JSON（连续测 5 次至少 4 次成功）
-- [ ] 能说出 Zero-shot / Few-shot / CoT 各自适用场景
+- [x] 模型能稳定返回合法 JSON（5/5 次成功）
+- [x] 能说出 Zero-shot / Few-shot / CoT 各自适用场景（见 week2 复盘）
 
 ---
 

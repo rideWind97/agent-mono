@@ -10,7 +10,8 @@ Week 1 起的练习代码，对应 [AGENT_LEARNING_PLAN.md](../../AGENT_LEARNING
 pnpm week1:curl          # curl 发第一条 chat 请求
 pnpm week1                 # CLI 多轮对话
 pnpm week1:experiments     # Temperature + Token 实验
-pnpm dev                   # Web /chat 页面（Web → Server → LLM）
+pnpm week2                 # Week 2 Prompt 实验（审查 / Few-shot / CoT）
+pnpm dev                   # Web /chat 页面
 ```
 
 ## 目录

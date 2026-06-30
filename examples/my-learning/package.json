@@ -7,6 +7,7 @@
     "week1": "tsx src/week1-chat.ts",
     "week1:curl": "bash scripts/first-request.sh",
     "week1:experiments": "tsx src/week1-experiments.ts",
+    "week2": "tsx src/week2-prompts.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
