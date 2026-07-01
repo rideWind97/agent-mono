@@ -65,3 +65,70 @@ export interface LangGraphRouterResponse {
   answer: string;
   steps: WorkflowStep[];
 }
+
+/** Function Calling 天气对比 Agent */
+export interface WeatherCompareRequest {
+  question: string;
+}
+
+export type WeatherFlowEvent =
+  | {
+      type: "tool_start";
+      id: string;
+      name: string;
+      detail: string;
+      attempt: number;
+    }
+  | {
+      type: "tool_end";
+      id: string;
+      name: string;
+      detail: string;
+      result: unknown;
+      attempt: number;
+    }
+  | {
+      type: "error";
+      id: string;
+      name: string;
+      detail: string;
+      attempt: number;
+    }
+  | {
+      type: "token";
+      content: string;
+    };
+
+export interface WeatherToolCallTrace {
+  id: string;
+  name: "get_weather" | "get_current_time" | "get_clothing_advice";
+  args: Record<string, unknown>;
+  status: "success" | "failed";
+  attempts: number;
+  result?: unknown;
+  error?: string;
+}
+
+export interface WeatherInfo {
+  city: string;
+  date: string;
+  condition: string;
+  temperature: number;
+  humidity: number;
+  wind: string;
+}
+
+export interface CityWeatherCompareResult {
+  city: string;
+  weather?: WeatherInfo;
+  currentTime?: string;
+}
+
+export interface WeatherCompareResponse {
+  answer: string;
+  cities: CityWeatherCompareResult[];
+  tempDiff: number | null;
+  advice: string;
+  flow: WeatherFlowEvent[];
+  toolCalls: WeatherToolCallTrace[];
+}

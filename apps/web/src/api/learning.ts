@@ -8,6 +8,8 @@ import type {
   MemoryChatRequest,
   MemoryChatResponse,
   MemoryResetResponse,
+  WeatherCompareRequest,
+  WeatherCompareResponse,
 } from "@agent-mono/shared";
 
 async function postJson<T>(url: string, body: unknown): Promise<T> {
@@ -42,4 +44,8 @@ export function runLangGraphWorkflow(payload: LangGraphWorkflowRequest) {
 
 export function runLangGraphRouter(payload: LangGraphRouterRequest) {
   return postJson<LangGraphRouterResponse>("/api/learning/langgraph-router", payload);
+}
+
+export function runWeatherAgent(payload: WeatherCompareRequest) {
+  return postJson<WeatherCompareResponse>("/api/learning/weather-agent", payload);
 }

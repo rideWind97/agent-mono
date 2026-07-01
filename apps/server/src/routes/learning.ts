@@ -9,6 +9,8 @@ import type {
   MemoryChatResponse,
   MemoryResetRequest,
   MemoryResetResponse,
+  WeatherCompareRequest,
+  WeatherCompareResponse,
 } from "@agent-mono/shared";
 import type { FastifyPluginAsync } from "fastify";
 
@@ -16,6 +18,7 @@ import { runMathWorkflow, runThreeNodeRouter } from "../lib/langgraph/simple-wor
 import { runCityWeatherChain } from "../lib/lcel/city-weather-chain.js";
 import { isLlmConfigured } from "../lib/llm.js";
 import { resetMemorySession, runMemoryChat } from "../lib/memory/memory-chat.js";
+import { runWeatherCompareAgent } from "../lib/tools/weather-agent.js";
 
 export const learningRoutes: FastifyPluginAsync = async (app) => {
   app.post<{ Body: CityWeatherRequest; Reply: CityWeatherResponse | { error: string } }>(
@@ -105,6 +108,23 @@ export const learningRoutes: FastifyPluginAsync = async (app) => {
     } catch (err) {
       request.log.error(err, "langgraph-router failed");
       return reply.status(400).send({ error: "LangGraph 三节点图执行失败" });
+    }
+  });
+
+  app.post<{
+    Body: WeatherCompareRequest;
+    Reply: WeatherCompareResponse | { error: string };
+  }>("/api/learning/weather-agent", async (request, reply) => {
+    const question = request.body.question?.trim();
+    if (!question) {
+      return reply.status(400).send({ error: "question 不能为空" });
+    }
+
+    try {
+      return await runWeatherCompareAgent(question);
+    } catch (err) {
+      request.log.error(err, "weather-agent failed");
+      return reply.status(400).send({ error: "天气 Agent 执行失败" });
     }
   });
 };

@@ -121,6 +121,16 @@ pnpm week1                 # CLI 对话练习
 | **Top-P** | 只在累积概率前 P 的候选词里选；越小越保守 |
 | **Messages** | 对话格式：`system`（人设）/ `user`（用户）/ `assistant`（模型） |
 
+#### 本周重点 API / 语法
+
+| 类型 | 重点 |
+|------|------|
+| **外部 API** | `POST {OPENAI_BASE_URL}/chat/completions` |
+| **本仓库 API** | `POST /api/chat`、`/chat` 页面 |
+| **命令** | `pnpm week1`、`pnpm week1:curl`、`pnpm week1:experiments` |
+| **重点语法** | `fetch()`、`messages: [{ role, content }]`、`temperature`、`usage.prompt_tokens`、`usage.completion_tokens` |
+| **代码位置** | `examples/my-learning/src/week1-chat.ts`、`examples/my-learning/src/lib/chat-api.ts`、`apps/server/src/routes/chat.ts` |
+
 #### 学习资料
 
 - 📖 [OpenAI API Reference](https://platform.openai.com/docs/api-reference)
@@ -155,6 +165,15 @@ pnpm week1                 # CLI 对话练习
 | **CoT（思维链）** | 加「请一步步思考」，提升推理题准确率 |
 | **结构化输出** | JSON Mode / Schema 约束，让模型返回可解析的数据 |
 | **反模式** | 指令模糊、示例不一致、要求互相矛盾 |
+
+#### 本周重点 API / 语法
+
+| 类型 | 重点 |
+|------|------|
+| **外部 API** | Chat Completions 的 `system` / `user` / `assistant` 消息结构 |
+| **命令** | `pnpm week2` |
+| **重点语法** | System Prompt、Zero-shot、Few-shot、CoT、JSON-only Prompt、`JSON.parse()`、正则提取 JSON |
+| **代码位置** | `examples/my-learning/src/week2-prompts.ts`、`examples/my-learning/src/prompts/*` |
 
 #### 学习资料
 
@@ -192,6 +211,16 @@ pnpm week1                 # CLI 对话练习
 | **LCEL** | `prompt | model | parser` 管道式组合 |
 | **Memory** | 在链里自动注入历史对话 |
 
+#### 本周重点 API / 语法
+
+| 类型 | 重点 |
+|------|------|
+| **本仓库 API** | `POST /api/learning/lcel-city`、`POST /api/learning/memory-chat`、`POST /api/learning/memory-reset` |
+| **Web 页面** | `/learning` |
+| **LangChain API** | `ChatPromptTemplate`、`ChatOpenAI`、`StructuredOutputParser.fromZodSchema()`、`RunnableWithMessageHistory`、`InMemoryChatMessageHistory` |
+| **重点语法** | `prompt.pipe(model).pipe(parser)`、`chain.invoke()`、`parser.getFormatInstructions()`、`new MessagesPlaceholder("history")`、`sessionId` |
+| **代码位置** | `apps/server/src/lib/lcel/city-weather-chain.ts`、`apps/server/src/lib/memory/memory-chat.ts`、`apps/web/src/views/LearningView.vue` |
+
 #### 学习资料
 
 - 📖 [LangChain.js 官方文档](https://js.langchain.com/docs/)（必读）
@@ -222,6 +251,16 @@ pnpm week1                 # CLI 对话练习
 | **Node** | 一个处理步骤（调 LLM、调工具、做校验） |
 | **Edge** | 节点之间的流转；可以是固定边或条件边 |
 | **State** | 图里流转的数据结构（如 `{ messages, steps, result }`） |
+
+#### 本周重点 API / 语法
+
+| 类型 | 重点 |
+|------|------|
+| **本仓库 API** | `POST /api/learning/langgraph-workflow`、`POST /api/learning/langgraph-router` |
+| **Web 页面** | `/learning` 的 LangGraph 示例区 |
+| **LangGraph API** | `Annotation.Root()`、`StateGraph`、`START`、`END` |
+| **重点语法** | `addNode()`、`addEdge()`、`addConditionalEdges()`、`graph.compile()`、`app.invoke()`、`steps` reducer |
+| **代码位置** | `apps/server/src/lib/langgraph/simple-workflow.ts`、`apps/web/src/components/learning/LangGraphWorkflowDemo.vue` |
 
 #### 学习资料
 
@@ -257,6 +296,16 @@ pnpm week1                 # CLI 对话练习
 | **并行调用** | 模型一次请求多个 tool，可 `Promise.all` 并发执行 |
 | **安全** | 参数校验、白名单、超时、禁止任意代码执行 |
 
+#### 本周重点 API / 语法
+
+| 类型 | 重点 |
+|------|------|
+| **本仓库 API** | `POST /api/learning/weather-agent` |
+| **外部 API** | OpenAI Tool / Function Calling：`tools`、`tool_calls`、`tool` role message |
+| **重点语法** | JSON Schema 工具定义、`Promise.all()` 并行工具、指数退避重试、工具参数白名单校验 |
+| **建议工具函数** | `get_weather(city)`、`get_current_time(city)`、`get_clothing_advice(tempDiff, weatherSummary)` |
+| **建议代码位置** | `apps/server/src/routes/learning.ts`、`apps/server/src/lib/tools/`、`apps/web/src/components/learning/` |
+
 #### 消息流（必须理解）
 
 ```
@@ -277,15 +326,15 @@ assistant: "北京今天晴25度，上海有雨22度，建议..."
 
 #### 实践任务
 
-- [ ] 在 `apps/server` 实现天气对比 Agent（Function Call），Web 展示工具调用轨迹
-- [ ] 3 个工具：`get_weather` / `get_current_time` / `get_clothing_advice`
-- [ ] 北京 + 上海并行查询
-- [ ] 单工具失败时重试 3 次（200ms / 500ms / 1000ms），不阻断整轮
+- [x] 在 `apps/server` 实现天气对比 Agent（Function Call），Web 展示工具调用轨迹
+- [x] 3 个工具：`get_weather` / `get_current_time` / `get_clothing_advice`
+- [x] 北京 + 上海并行查询
+- [x] 单工具失败时重试 3 次（200ms / 500ms / 1000ms），不阻断整轮
 
 #### 验收
 
-- [ ] 输入「对比北京和上海天气并给穿衣建议」能稳定完成
-- [ ] 能手绘 tool_calls 完整时序图
+- [x] 输入「对比北京和上海天气并给穿衣建议」能稳定完成
+- [x] 能手绘 tool_calls 完整时序图 → 见 `docs/learning-notes/week-5.md`
 
 ---
 
@@ -304,6 +353,15 @@ assistant: "北京今天晴25度，上海有雨22度，建议..."
 | **Server** | 暴露 tools / resources / prompts 的独立进程 |
 | **stdio / SSE / HTTP** | 三种传输方式；本地开发用 stdio 最简单 |
 | **三大原语** | Resources（只读上下文）、Tools（可执行）、Prompts（模板） |
+
+#### 本周重点 API / 语法
+
+| 类型 | 重点 |
+|------|------|
+| **练习入口** | `examples/mcp-learning/` |
+| **MCP API** | `McpServer`、`Client`、`StdioServerTransport`、`StdioClientTransport` |
+| **重点语法** | `server.tool()`、`server.resource()`、`server.prompt()`、`client.listTools()`、`client.callTool()` |
+| **重点概念** | Host / Client / Server、Resources / Tools / Prompts |
 
 #### 学习资料
 
@@ -338,6 +396,15 @@ assistant: "北京今天晴25度，上海有雨22度，建议..."
 | **Retrieval** | 用户问题 → 取向量 → 找最相似的 chunks |
 | **RAG 流程** | 检索相关文档 → 塞进 Prompt → LLM 基于文档回答 |
 | **优化** | Re-ranking、Hybrid Search、Query Expansion |
+
+#### 本周重点 API / 语法
+
+| 类型 | 重点 |
+|------|------|
+| **计划 API** | `POST /api/rag/ingest`、`POST /api/rag/query` |
+| **LangChain API** | Document Loader、Text Splitter、Embedding Model、Vector Store、Retriever |
+| **重点语法** | `splitDocuments()`、`embedQuery()`、`similaritySearch()`、`retriever.invoke()`、`topK`、chunk size / overlap |
+| **建议代码位置** | `apps/server/src/lib/rag/`、`apps/server/src/routes/rag.ts`、`apps/web/src/views/RagView.vue` |
 
 #### 学习资料
 
@@ -380,6 +447,15 @@ assistant: "北京今天晴25度，上海有雨22度，建议..."
 | **Supervisor** | 一个调度 Agent 分配任务给多个专业 Agent |
 | **Guardrails** | 输出校验、危险操作拦截 |
 
+#### 本周重点 API / 语法
+
+| 类型 | 重点 |
+|------|------|
+| **练习入口** | `examples/agent-practice/` 或 `apps/server/src/lib/agent/` |
+| **LangGraph Agent API** | `createAgent` / prebuilt ReAct Agent、`tool()`、`MemorySaver` |
+| **重点语法** | ReAct 循环、工具注册、`thread_id`、`checkpointer`、guardrails 输出校验 |
+| **建议 API** | `POST /api/agent/react`、`POST /api/agent/supervisor` |
+
 #### 学习资料
 
 - 📖 [LangGraph Agent 教程](https://langchain-ai.github.io/langgraphjs/tutorials/)
@@ -410,6 +486,15 @@ assistant: "北京今天晴25度，上海有雨22度，建议..."
 | **HITL** | Human-in-the-Loop，关键节点等人审批 |
 | **持久化** | 工作流状态存盘，支持中断后恢复 |
 
+#### 本周重点 API / 语法
+
+| 类型 | 重点 |
+|------|------|
+| **练习入口** | `examples/workflow-practice/` 或 `apps/server/src/lib/workflow/` |
+| **LangGraph API** | `StateGraph`、`interrupt()`、`MemorySaver` |
+| **重点语法** | DAG、条件边、循环边、Human-in-the-loop、`resume`、checkpoint 持久化 |
+| **建议 API** | `POST /api/workflow/content`、`POST /api/workflow/resume` |
+
 #### 学习资料
 
 - 📖 [LangGraph 工作流文档](https://langchain-ai.github.io/langgraphjs/concepts/)
@@ -438,6 +523,15 @@ assistant: "北京今天晴25度，上海有雨22度，建议..."
 | **短期记忆** | 当前对话的 messages 数组 |
 | **长期记忆** | 向量库存用户偏好、历史摘要，跨 session 检索 |
 | **摘要压缩** | 对话过长时自动 summarize，替换早期消息 |
+
+#### 本周重点 API / 语法
+
+| 类型 | 重点 |
+|------|------|
+| **计划 API** | `POST /api/memory/extract`、`POST /api/memory/search`、`POST /api/chat/with-memory` |
+| **框架 API** | `MemorySaver`、Vector Store Retriever、Embedding Model |
+| **重点语法** | 用户偏好抽取、按 `userId/sessionId` 检索记忆、摘要压缩、context 裁剪 |
+| **建议代码位置** | `apps/server/src/lib/memory/`、`apps/server/src/routes/memory.ts` |
 
 #### 学习资料
 
@@ -470,6 +564,16 @@ assistant: "北京今天晴25度，上海有雨22度，建议..."
 | **成本监控** | 记录每次调用的 token 与估算费用 |
 | **Eval** | 固定测试集 + 自动化评估 pass rate |
 
+#### 本周重点 API / 语法
+
+| 类型 | 重点 |
+|------|------|
+| **计划 API** | `GET /api/chat/stream`、`GET /api/metrics/cost`、`POST /api/eval/run` |
+| **Web API** | `EventSource`、`ReadableStream`、`AbortController` |
+| **Server 语法** | `text/event-stream`、`data:` SSE 事件、流式 token 输出 |
+| **工程语法** | cache key、token 计费记录、eval case runner、pass rate 统计 |
+| **建议代码位置** | `apps/server/src/routes/stream.ts`、`apps/web/src/composables/useSseChat.ts` |
+
 #### 实践任务
 
 - [ ] 在练习项目中为 chat 接口加 SSE 流式输出
@@ -489,6 +593,15 @@ assistant: "北京今天晴25度，上海有雨22度，建议..."
 ### Capstone：智能客服（Week 13–14）
 
 **目标：** 在现有 `apps/server` + `apps/web` 上扩展 RAG 问答、意图路由、转人工与工具调用。
+
+#### 本周重点 API / 语法
+
+| 类型 | 重点 |
+|------|------|
+| **Capstone API** | `POST /api/customer-service/chat`、`POST /api/customer-service/handoff`、`POST /api/rag/query`、`GET /api/chat/stream` |
+| **综合框架 API** | RAG Retriever、Tool Calling、LangGraph Workflow、Memory / Checkpoint |
+| **重点语法** | 模块化路由、共享类型、SSE 事件、工具轨迹、端到端 eval、错误降级 |
+| **交付物代码位置** | `apps/server/src/routes/`、`apps/server/src/lib/`、`apps/web/src/views/`、`packages/shared/src/` |
 
 #### Week 13–14 交付物
 
@@ -556,9 +669,9 @@ assistant: "北京今天晴25度，上海有雨22度，建议..."
 - [ ] Week 2：Prompt 工程（System / Few-shot / CoT / JSON）
 
 ### 阶段二：框架
-- [ ] Week 3：LangChain LCEL + Memory
-- [ ] Week 4：LangGraph 多步骤工作流
-- [ ] Week 5：Function Calling 端到端
+- [x] Week 3：LangChain LCEL + Memory
+- [x] Week 4：LangGraph 多步骤工作流
+- [x] Week 5：Function Calling 端到端
 
 ### 阶段三：核心
 - [ ] Week 6：MCP Server + Host 接入

@@ -4,6 +4,7 @@ import { onMounted, ref } from "vue";
 
 import { fetchCityWeather, resetMemoryChat, sendMemoryChat } from "@/api/learning";
 import LangGraphWorkflowDemo from "@/components/learning/LangGraphWorkflowDemo.vue";
+import WeatherAgentDemo from "@/components/learning/WeatherAgentDemo.vue";
 
 const city = ref("上海");
 const cityLoading = ref(false);
@@ -193,6 +194,7 @@ async function resetMemory() {
     </section>
 
     <LangGraphWorkflowDemo />
+    <WeatherAgentDemo />
   </div>
 </template>
 
