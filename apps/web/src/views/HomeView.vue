@@ -30,8 +30,9 @@ onMounted(async () => {
     <p v-if="error" class="error">{{ error }} — 请先运行 <code>pnpm dev:server</code></p>
 
     <ul class="links">
-      <li><RouterLink to="/chat">进入对话页 →</RouterLink></li>
-      <li>CLI 练习：<code>pnpm week1</code>（examples/my-learning）</li>
+      <li><RouterLink to="/chat">对话页 →</RouterLink></li>
+      <li><RouterLink to="/learning">Week 3 LCEL / Memory →</RouterLink></li>
+      <li>CLI 练习：<code>pnpm week1</code> · <code>pnpm week2</code></li>
     </ul>
   </section>
 </template>

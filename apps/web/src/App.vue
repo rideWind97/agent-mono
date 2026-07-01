@@ -15,6 +15,9 @@ import { RouterLink, RouterView } from "vue-router";
         <RouterLink to="/chat">
           对话
         </RouterLink>
+        <RouterLink to="/learning">
+          学习
+        </RouterLink>
       </nav>
     </header>
     <main class="main">

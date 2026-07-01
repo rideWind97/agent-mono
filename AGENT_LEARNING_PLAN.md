@@ -199,14 +199,14 @@ pnpm week1                 # CLI 对话练习
 
 #### 实践任务
 
-- [ ] 在 `apps/server/src/routes/` 实现 LCEL 链，并在 `apps/web` 加联调页面
-- [ ] 实现：`Prompt → LLM → OutputParser` 链，输入城市名，输出 `{ city, weather, tip }` JSON
-- [ ] 实现带 Memory 的多轮对话
+- [x] 在 `apps/server/src/routes/` 实现 LCEL 链，并在 `apps/web` 加联调页面 → `/learning`
+- [x] 实现：`Prompt → LLM → OutputParser` 链，输入城市名，输出 `{ city, weather, tip }` JSON
+- [x] 实现带 Memory 的多轮对话 → `RunnableWithMessageHistory`
 
 #### 验收
 
-- [ ] 能画出 `Prompt → Model → Parser` 数据流
-- [ ] Memory 对话能记住上一轮提到的信息
+- [x] 能画出 `Prompt → Model → Parser` 数据流 → 见 `docs/learning-notes/week-3.md`
+- [x] Memory 对话能记住上一轮提到的信息（实测记住「小明」）
 
 ---
 

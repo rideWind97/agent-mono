@@ -3,6 +3,7 @@ import Fastify from "fastify";
 
 import { assertServerConfig, serverConfig } from "./config.js";
 import { chatRoutes } from "./routes/chat.js";
+import { learningRoutes } from "./routes/learning.js";
 
 assertServerConfig();
 
@@ -10,6 +11,7 @@ const app = Fastify({ logger: true });
 
 await app.register(cors, { origin: true });
 await app.register(chatRoutes);
+await app.register(learningRoutes);
 
 app.get("/api/health", async () => ({
   ok: true,
