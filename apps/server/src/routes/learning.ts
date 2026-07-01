@@ -1,6 +1,10 @@
 import type {
   CityWeatherRequest,
   CityWeatherResponse,
+  LangGraphRouterRequest,
+  LangGraphRouterResponse,
+  LangGraphWorkflowRequest,
+  LangGraphWorkflowResponse,
   MemoryChatRequest,
   MemoryChatResponse,
   MemoryResetRequest,
@@ -8,6 +12,7 @@ import type {
 } from "@agent-mono/shared";
 import type { FastifyPluginAsync } from "fastify";
 
+import { runMathWorkflow, runThreeNodeRouter } from "../lib/langgraph/simple-workflow.js";
 import { runCityWeatherChain } from "../lib/lcel/city-weather-chain.js";
 import { isLlmConfigured } from "../lib/llm.js";
 import { resetMemorySession, runMemoryChat } from "../lib/memory/memory-chat.js";
@@ -68,4 +73,38 @@ export const learningRoutes: FastifyPluginAsync = async (app) => {
       return { ok: true, sessionId: sessionId ?? "" };
     },
   );
+
+  app.post<{
+    Body: LangGraphWorkflowRequest;
+    Reply: LangGraphWorkflowResponse | { error: string };
+  }>("/api/learning/langgraph-workflow", async (request, reply) => {
+    const input = request.body.input?.trim();
+    if (!input) {
+      return reply.status(400).send({ error: "input 不能为空" });
+    }
+
+    try {
+      return await runMathWorkflow(input);
+    } catch (err) {
+      request.log.error(err, "langgraph-workflow failed");
+      return reply.status(400).send({ error: "LangGraph 工作流执行失败" });
+    }
+  });
+
+  app.post<{
+    Body: LangGraphRouterRequest;
+    Reply: LangGraphRouterResponse | { error: string };
+  }>("/api/learning/langgraph-router", async (request, reply) => {
+    const input = request.body.input?.trim();
+    if (!input) {
+      return reply.status(400).send({ error: "input 不能为空" });
+    }
+
+    try {
+      return await runThreeNodeRouter(input);
+    } catch (err) {
+      request.log.error(err, "langgraph-router failed");
+      return reply.status(400).send({ error: "LangGraph 三节点图执行失败" });
+    }
+  });
 };

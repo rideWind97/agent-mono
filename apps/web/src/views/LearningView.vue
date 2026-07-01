@@ -3,6 +3,7 @@ import type { CityWeatherResult } from "@agent-mono/shared";
 import { onMounted, ref } from "vue";
 
 import { fetchCityWeather, resetMemoryChat, sendMemoryChat } from "@/api/learning";
+import LangGraphWorkflowDemo from "@/components/learning/LangGraphWorkflowDemo.vue";
 
 const city = ref("上海");
 const cityLoading = ref(false);
@@ -190,6 +191,8 @@ async function resetMemory() {
         </button>
       </form>
     </section>
+
+    <LangGraphWorkflowDemo />
   </div>
 </template>
 

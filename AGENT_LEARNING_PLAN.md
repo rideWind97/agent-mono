@@ -230,16 +230,16 @@ pnpm week1                 # CLI 对话练习
 
 #### 实践任务
 
-- [ ] 在 `apps/server/src/routes/` 实现 LangGraph 工作流，Web 学习页展示 `steps`
+- [x] 在 `apps/server/src/routes/` 实现 LangGraph 工作流，Web 学习页展示 `steps`
   - 输入：`(12 + 8) * 3`
-  - 路径：`classify → plan → solve → finalize`
+  - 路径：`classify → plan → solveMath → finalize`
   - 返回 `steps` 数组，每步含 `node` 与 `detail`
-- [ ] 自己写一个 3 节点图：接收问题 → 分类 → 回答（数学走计算，否则走闲聊）
+- [x] 自己写一个 3 节点图：接收问题 → 分类 → 回答（数学走计算，否则走闲聊）
 
 #### 验收
 
-- [ ] 能解释 Node、Edge、State 三者关系
-- [ ] 自定义 3 节点图可运行并打印每步状态
+- [x] 能解释 Node、Edge、State 三者关系 → 见 `docs/learning-notes/week-4.md`
+- [x] 自定义 3 节点图可运行并打印每步状态
 
 ---
 

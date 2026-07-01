@@ -1,6 +1,10 @@
 import type {
   CityWeatherRequest,
   CityWeatherResponse,
+  LangGraphRouterRequest,
+  LangGraphRouterResponse,
+  LangGraphWorkflowRequest,
+  LangGraphWorkflowResponse,
   MemoryChatRequest,
   MemoryChatResponse,
   MemoryResetResponse,
@@ -30,4 +34,12 @@ export function sendMemoryChat(payload: MemoryChatRequest) {
 
 export function resetMemoryChat(sessionId: string) {
   return postJson<MemoryResetResponse>("/api/learning/memory-reset", { sessionId });
+}
+
+export function runLangGraphWorkflow(payload: LangGraphWorkflowRequest) {
+  return postJson<LangGraphWorkflowResponse>("/api/learning/langgraph-workflow", payload);
+}
+
+export function runLangGraphRouter(payload: LangGraphRouterRequest) {
+  return postJson<LangGraphRouterResponse>("/api/learning/langgraph-router", payload);
 }

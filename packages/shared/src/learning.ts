@@ -36,3 +36,32 @@ export interface MemoryResetResponse {
   ok: boolean;
   sessionId: string;
 }
+
+/** LangGraph 工作流示例 */
+export interface WorkflowStep {
+  node: string;
+  detail: string;
+}
+
+export interface LangGraphWorkflowRequest {
+  input: string;
+}
+
+export interface LangGraphWorkflowResponse {
+  input: string;
+  classification: "math" | "chat";
+  plan: string;
+  result: string;
+  steps: WorkflowStep[];
+}
+
+export interface LangGraphRouterRequest {
+  input: string;
+}
+
+export interface LangGraphRouterResponse {
+  input: string;
+  classification: "math" | "chat";
+  answer: string;
+  steps: WorkflowStep[];
+}
