@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "agent-mono-mcp-learning": {
+      "command": "pnpm",
+      "args": [
+        "--dir",
+        "/Users/chengfeng/workspace/agent-mono",
+        "--filter",
+        "@agent-mono/mcp-learning",
+        "run",
+        "server"
+      ]
+    }
+  }
+}

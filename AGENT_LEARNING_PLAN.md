@@ -370,15 +370,15 @@ assistant: "北京今天晴25度，上海有雨22度，建议..."
 
 #### 实践任务
 
-- [ ] 在 `examples/mcp-learning/` 实现 MCP Server + Client（stdio）
-- [ ] 给 Server 新增 `read_file` / `write_file` 工具（限制在工作目录）
-- [ ] 接入 Cursor 或 Claude Desktop，在 IDE 里调用你的 MCP tool
-- [ ] 写对比笔记：MCP vs 直接 Function Call 各适合什么场景
+- [x] 在 `examples/mcp-learning/` 实现 MCP Server + Client（stdio）
+- [x] 给 Server 新增 `read_file` / `write_file` 工具（限制在工作目录）
+- [x] 接入 Cursor 或 Claude Desktop，在 IDE 里调用你的 MCP tool（见 `examples/mcp-learning/README.md`）
+- [x] 写对比笔记：MCP vs 直接 Function Call 各适合什么场景（见 `docs/learning-notes/week-6.md`）
 
 #### 验收
 
-- [ ] Host 能 list 并 invoke 你的 MCP tools
-- [ ] 能画出 Host → Client → Server 三层图
+- [x] Host 能 list 并 invoke 你的 MCP tools
+- [x] 能画出 Host → Client → Server 三层图
 
 ---
 

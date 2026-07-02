@@ -1,0 +1,9 @@
+{
+  "extends": "@agent-mono/typescript-config/node-app.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "noEmit": true
+  },
+  "include": ["src"]
+}

@@ -7,7 +7,8 @@
     { "path": "./packages/shared" },
     { "path": "./apps/server" },
     { "path": "./apps/web" },
-    { "path": "./examples/my-learning" }
+    { "path": "./examples/my-learning" },
+    { "path": "./examples/mcp-learning" }
   ],
   "files": []
 }

@@ -1,0 +1,20 @@
+{
+  "name": "@agent-mono/mcp-learning",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "server": "tsx src/server.ts",
+    "client": "tsx src/client.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@agent-mono/typescript-config": "workspace:*",
+    "tsx": "^4.19.3",
+    "typescript": "^5.5.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.25.76"
+  }
+}
