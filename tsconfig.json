@@ -8,7 +8,8 @@
     { "path": "./apps/server" },
     { "path": "./apps/web" },
     { "path": "./examples/my-learning" },
-    { "path": "./examples/mcp-learning" }
+    { "path": "./examples/mcp-learning" },
+    { "path": "./examples/rag-learning" }
   ],
   "files": []
 }

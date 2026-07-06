@@ -1,0 +1,17 @@
+{
+  "name": "@agent-mono/rag-learning",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "ask": "tsx src/ask.ts",
+    "compare": "tsx src/compare-chunks.ts",
+    "eval": "tsx src/eval.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@agent-mono/typescript-config": "workspace:*",
+    "tsx": "^4.19.3",
+    "typescript": "^5.5.0"
+  }
+}

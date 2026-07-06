@@ -1,23 +1,26 @@
-# MCP Week 6 Task Plan
+# RAG Week 7-8 Task Plan
 
 ## Goal
 
-完成 `AGENT_LEARNING_PLAN.md` Week 6 的 MCP 练习项：实现 stdio MCP Server + Client，提供受限文件工具，补充 IDE 接入说明和 MCP 对比笔记。
+完成 `AGENT_LEARNING_PLAN.md` Week 7-8 的 RAG 练习项：创建 `examples/rag-learning`，实现本地知识库加载、分块、Embedding、向量库检索、Hybrid Search、问答、chunk 策略对比和 10 条 QA 评估。
 
 ## Phases
 
-- [x] Phase 1: 阅读当前 monorepo 示例结构和 Week 6 要求
-- [x] Phase 2: 创建 `examples/mcp-learning` 包和 MCP server/client
-- [x] Phase 3: 补充 README、学习笔记和计划文档勾选
-- [x] Phase 4: 安装依赖并运行 typecheck / demo 验证
+- [x] Phase 1: 阅读当前 monorepo 示例结构和 Week 7-8 要求
+- [x] Phase 2: 创建 `examples/rag-learning` 包、知识库文档和 QA 测试集
+- [x] Phase 3: 实现 RAG 核心链路与带注释代码
+- [x] Phase 4: 补充 README、学习笔记和计划文档勾选
+- [x] Phase 5: 运行 demo / eval / typecheck 验证
 
 ## Decisions
 
-- MCP 示例作为独立 workspace package 放在 `examples/mcp-learning`。
-- 文件工具仅允许访问该示例包内的 `workspace/` 目录。
+- RAG 示例作为独立 workspace package 放在 `examples/rag-learning`。
+- 为了从零学习和稳定运行，使用本地 Hashing Embedding + 内存向量库，不依赖真实 Embedding API。
+- Hybrid Search 使用向量相似度 + 关键词重叠分数，便于观察检索质量变化。
 
 ## Errors Encountered
 
 | Error | Attempt | Resolution |
 |-------|---------|------------|
-| `pnpm ... server` 被解析为 pnpm 内置命令并报 `Unknown option: 'recursive'` | 运行 MCP client demo | 改为显式 `pnpm --dir <repo> --filter @agent-mono/mcp-learning run server` |
+| 新增 workspace 后 `@agent-mono/typescript-config/node-app.json` 找不到 | 首次运行 RAG typecheck | 需要运行 `pnpm install` 让新 package 链接 workspace 依赖 |
+| 中文 query token 过长导致向量库相关问题未命中 | 首次运行 RAG eval | 优化 tokenizer，为中文连续文本生成 2-4 字 n-gram |

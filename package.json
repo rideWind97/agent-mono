@@ -25,7 +25,10 @@
     "week1:curl": "pnpm --filter @agent-mono/my-learning week1:curl",
     "week1:experiments": "pnpm --filter @agent-mono/my-learning week1:experiments",
     "week2": "pnpm --filter @agent-mono/my-learning week2",
-    "week6:mcp": "pnpm --filter @agent-mono/mcp-learning client"
+    "week6:mcp": "pnpm --filter @agent-mono/mcp-learning client",
+    "week7:rag": "pnpm --filter @agent-mono/rag-learning ask",
+    "week8:rag:compare": "pnpm --filter @agent-mono/rag-learning compare",
+    "week8:rag:eval": "pnpm --filter @agent-mono/rag-learning eval"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

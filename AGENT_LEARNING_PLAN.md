@@ -401,10 +401,10 @@ assistant: "北京今天晴25度，上海有雨22度，建议..."
 
 | 类型 | 重点 |
 |------|------|
-| **计划 API** | `POST /api/rag/ingest`、`POST /api/rag/query` |
-| **LangChain API** | Document Loader、Text Splitter、Embedding Model、Vector Store、Retriever |
-| **重点语法** | `splitDocuments()`、`embedQuery()`、`similaritySearch()`、`retriever.invoke()`、`topK`、chunk size / overlap |
-| **建议代码位置** | `apps/server/src/lib/rag/`、`apps/server/src/routes/rag.ts`、`apps/web/src/views/RagView.vue` |
+| **练习命令** | `pnpm week7:rag`、`pnpm week8:rag:compare`、`pnpm week8:rag:eval` |
+| **本地实现** | Loader、Text Splitter、Hashing Embedding、In-memory Vector Store、Hybrid Retriever |
+| **重点语法** | `splitDocuments()`、`embedText()`、`hybridSearch()`、`topK`、chunk size / overlap |
+| **代码位置** | `examples/rag-learning/`、`examples/rag-learning/src/lib/rag.ts` |
 
 #### 学习资料
 
@@ -415,21 +415,21 @@ assistant: "北京今天晴25度，上海有雨22度，建议..."
 
 **Week 7**
 
-- [ ] 在 `examples/rag-learning/` 新建并实现完整 RAG 链路
-- [ ] 准备 3–5 篇 Markdown 文档作为知识库
-- [ ] 实现：加载 → 分块 → Embedding → 存入向量库
+- [x] 在 `examples/rag-learning/` 新建并实现完整 RAG 链路
+- [x] 准备 3–5 篇 Markdown 文档作为知识库
+- [x] 实现：加载 → 分块 → Embedding → 存入向量库
 
 **Week 8**
 
-- [ ] 实现问答：用户提问 → 检索 top-k → 生成回答
-- [ ] 对比 2 种 chunk 策略（如 500 字 vs 1000 字），记录检索质量差异
-- [ ] 加入 Re-ranking 或 Hybrid Search 中的一项
-- [ ] 准备 10 条 QA 测试集，人工评估命中率
+- [x] 实现问答：用户提问 → 检索 top-k → 生成回答
+- [x] 对比 2 种 chunk 策略（如 500 字 vs 1000 字），记录检索质量差异
+- [x] 加入 Re-ranking 或 Hybrid Search 中的一项
+- [x] 准备 10 条 QA 测试集，人工评估命中率
 
 #### 验收
 
-- [ ] 知识库问答能引用文档内容，不胡编
-- [ ] 10 条测试集命中率 ≥ 70%（可人工判）
+- [x] 知识库问答能引用文档内容，不胡编
+- [x] 10 条测试集命中率 ≥ 70%（可人工判，当前自动评估 10/10）
 
 ---
 
