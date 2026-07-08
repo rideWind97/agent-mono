@@ -1,0 +1,17 @@
+{
+  "name": "@agent-mono/workflow-practice",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/start.ts",
+    "resume": "tsx src/resume.ts",
+    "demo": "tsx src/demo.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@agent-mono/typescript-config": "workspace:*",
+    "tsx": "^4.19.3",
+    "typescript": "^5.5.0"
+  }
+}
