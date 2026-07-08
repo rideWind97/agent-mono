@@ -1,24 +1,25 @@
-# Agent Week 9 Task Plan
+# Workflow Week 10 Task Plan
 
 ## Goal
 
-完成 `AGENT_LEARNING_PLAN.md` Week 9 的 Agent 练习项：在 `examples/agent-practice/` 实现可运行的 ReAct Agent 和 Supervisor 多 Agent 示例，并补充 Agent vs Workflow 选型说明。
+完成 `AGENT_LEARNING_PLAN.md` Week 10 的 Workflow 练习项：在 `examples/workflow-practice/` 实现内容创作 DAG、条件分支、HITL 中断、resume 继续和 checkpoint 持久化。
 
 ## Phases
 
-- [x] Phase 1: 阅读 Week 9 要求、现有 examples 结构和 Agent 架构文档
-- [x] Phase 2: 创建 `examples/agent-practice` 包和基础脚本
-- [x] Phase 3: 实现 ReAct 多步工具调用与 Supervisor 多 Agent 调度
+- [x] Phase 1: 阅读 Week 10 要求、现有 examples 结构和已有 LangGraph 示例
+- [x] Phase 2: 创建 `examples/workflow-practice` 包和基础脚本
+- [x] Phase 3: 实现内容创作 DAG、HITL 中断和 checkpoint resume
 - [x] Phase 4: 补充 README、学习笔记和计划文档勾选
 - [x] Phase 5: 运行 demo / typecheck 验证
 
 ## Decisions
 
-- Agent 示例作为独立 workspace package 放在 `examples/agent-practice`。
-- 为了稳定教学，先用本地规则模拟“模型决策”，展示 ReAct 的 Thought / Action / Observation / Final 轨迹。
-- Supervisor 负责拆分任务并路由给 researcher / calculator / writer 三个专业 Agent。
+- Workflow 示例作为独立 workspace package 放在 `examples/workflow-practice`。
+- 为了稳定教学，使用本地 TypeScript 实现确定性 DAG 和 checkpoint，不依赖真实 LLM 调用。
+- HITL 使用 `humanApproval` 节点中断；resume 从 `.checkpoints/<threadId>.json` 读取状态继续执行。
 
 ## Errors Encountered
 
 | Error | Attempt | Resolution |
 |-------|---------|------------|
+| `case "end"` 被 TypeScript 判断为不可达 | 首次运行 workflow typecheck | `while` 条件已经排除 `end`，删除 switch 中的 `case "end"` |

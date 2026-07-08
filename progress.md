@@ -23,3 +23,7 @@
 - 已通过 `pnpm --filter @agent-mono/agent-practice react` 验证 ReAct 能按 Thought / Action / Observation / Final 多步调用工具。
 - 已通过 `pnpm --filter @agent-mono/agent-practice supervisor` 验证 Supervisor 能拆分任务并调度 researcher / calculator / writer。
 - 已通过 `pnpm typecheck` 验证整个 monorepo 类型检查。
+- 已确认 Week 10 任务范围：内容创作 DAG、条件分支、循环修订、HITL 中断、checkpoint resume。
+- 已创建 `@agent-mono/workflow-practice`，包含 `start`、`resume` 和 `demo` 三个脚本。
+- 已通过 `pnpm --filter @agent-mono/workflow-practice demo` 验证：工作流先在 `humanApproval` 中断，再从 checkpoint resume 到发布完成。
+- 已通过 `pnpm typecheck` 验证整个 monorepo 类型检查。

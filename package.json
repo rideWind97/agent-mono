@@ -30,7 +30,10 @@
     "week8:rag:compare": "pnpm --filter @agent-mono/rag-learning compare",
     "week8:rag:eval": "pnpm --filter @agent-mono/rag-learning eval",
     "week9:agent:react": "pnpm --filter @agent-mono/agent-practice react",
-    "week9:agent:supervisor": "pnpm --filter @agent-mono/agent-practice supervisor"
+    "week9:agent:supervisor": "pnpm --filter @agent-mono/agent-practice supervisor",
+    "week10:workflow:demo": "pnpm --filter @agent-mono/workflow-practice demo",
+    "week10:workflow:start": "pnpm --filter @agent-mono/workflow-practice start",
+    "week10:workflow:resume": "pnpm --filter @agent-mono/workflow-practice resume"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

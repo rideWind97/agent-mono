@@ -10,7 +10,8 @@
     { "path": "./examples/my-learning" },
     { "path": "./examples/mcp-learning" },
     { "path": "./examples/rag-learning" },
-    { "path": "./examples/agent-practice" }
+    { "path": "./examples/agent-practice" },
+    { "path": "./examples/workflow-practice" }
   ],
   "files": []
 }

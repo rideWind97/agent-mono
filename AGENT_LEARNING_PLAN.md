@@ -501,12 +501,12 @@ assistant: "北京今天晴25度，上海有雨22度，建议..."
 
 #### 实践任务
 
-- [ ] 在 `examples/workflow-practice/` 实现内容创作 DAG + HITL + 持久化
+- [x] 在 `examples/workflow-practice/` 实现内容创作 DAG + HITL + 持久化
 
 #### 验收
 
-- [ ] 完成内容创作全流程 Demo
-- [ ] HITL 节点能在中断后 resume 继续
+- [x] 完成内容创作全流程 Demo
+- [x] HITL 节点能在中断后 resume 继续
 
 ---
 
