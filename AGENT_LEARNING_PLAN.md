@@ -463,12 +463,12 @@ assistant: "北京今天晴25度，上海有雨22度，建议..."
 
 #### 实践任务
 
-- [ ] 在 `examples/agent-practice/` 实现 ReAct + Supervisor 多 Agent
+- [x] 在 `examples/agent-practice/` 实现 ReAct + Supervisor 多 Agent
 
 #### 验收
 
-- [ ] ReAct Agent 能多步调用工具完成任务
-- [ ] 能说出 Agent 和 Workflow 的区别与选型原则
+- [x] ReAct Agent 能多步调用工具完成任务
+- [x] 能说出 Agent 和 Workflow 的区别与选型原则
 
 ---
 

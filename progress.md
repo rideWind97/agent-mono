@@ -15,3 +15,11 @@
 - 已创建 `@agent-mono/rag-learning`，包含 5 篇 Markdown 知识库和 10 条 QA 测试集。
 - 已实现本地 Hashing Embedding、内存向量库、Hybrid Search、问答、chunk 对比和 eval 脚本。
 - 当前 `pnpm --filter @agent-mono/rag-learning eval` 结果：检索命中率 10/10，答案关键词命中率 8/10。
+
+## 2026-07-08
+
+- 已确认 Week 9 任务范围：ReAct 多步工具调用、Supervisor 多 Agent、Agent vs Workflow 选型原则。
+- 已创建 `@agent-mono/agent-practice`，包含 `react` 和 `supervisor` 两个 demo。
+- 已通过 `pnpm --filter @agent-mono/agent-practice react` 验证 ReAct 能按 Thought / Action / Observation / Final 多步调用工具。
+- 已通过 `pnpm --filter @agent-mono/agent-practice supervisor` 验证 Supervisor 能拆分任务并调度 researcher / calculator / writer。
+- 已通过 `pnpm typecheck` 验证整个 monorepo 类型检查。

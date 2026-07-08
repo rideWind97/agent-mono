@@ -1,0 +1,16 @@
+{
+  "name": "@agent-mono/agent-practice",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "react": "tsx src/react-demo.ts",
+    "supervisor": "tsx src/supervisor-demo.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@agent-mono/typescript-config": "workspace:*",
+    "tsx": "^4.19.3",
+    "typescript": "^5.5.0"
+  }
+}
